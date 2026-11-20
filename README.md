@@ -25,9 +25,9 @@ Los Grados A, B y C de la familia **no son equivalentes automáticamente a los G
 1. Interfaz identificada como «EvalúaFP Canarias · Administración y Gestión».
 2. Selector de comunidad limitado a Canarias y selector de ciclo con los cuatro títulos identificados.
 3. Validación **en el servidor**: no admite crear módulos de otro territorio o ciclo ajeno a la familia en esta edición.
-4. Consulta GET autenticada \`/api/canarias-ag/catalog\` con títulos, fuentes y estado de verificación curricular.
-5. Almacenamiento SQLite independiente: directorio local \`EvaluaFPCanarias\` y carpetas portátiles \`EvaluaFPCanarias_Datos\` y \`EvaluaFPCanarias_Copias\`.
-6. Variables de entorno propias: \`EVALUAFP_CANARIAS_DATA_DIR\`, \`EVALUAFP_CANARIAS_PORTABLE\` y \`EVALUAFP_CANARIAS_PORTABLE_HOME\`.
+4. Consulta GET autenticada `/api/canarias-ag/catalog` con títulos, fuentes y estado de verificación curricular.
+5. Almacenamiento SQLite independiente: directorio local `EvaluaFPCanarias` y carpetas portátiles `EvaluaFPCanarias_Datos` y `EvaluaFPCanarias_Copias`.
+6. Variables de entorno propias: `EVALUAFP_CANARIAS_DATA_DIR`, `EVALUAFP_CANARIAS_PORTABLE` y `EVALUAFP_CANARIAS_PORTABLE_HOME`.
 7. Identidad de credenciales IA separada del proyecto original. La IA continúa siendo opcional y requiere supervisión docente.
 8. Conserva la importación/revisión de programaciones, RA/CE, evaluación, exámenes, informes, corrección asistida, FEOE y calendarios de la base.
 9. Fiscalidad didáctica canaria: los casos de tributación indirecta deben utilizar IGIC cuando corresponda y verificar los tipos aplicables.
@@ -45,16 +45,16 @@ Fuentes normativas de referencia:
 
 ## Instalación y pruebas
 
-Requiere Python 3.13 y dependencias de \`requirements.txt\`. En una carpeta nueva:
-\`\`\`bash
+Requiere Python 3.13 y dependencias de `requirements.txt`. En una carpeta nueva:
+```bash
 python -m pip install -r requirements.txt
 python app.py
-\`\`\`
-En Windows pueden utilizarse \`INICIAR_EVALUAFP.bat\` y \`CREAR_VERSION_PENDRIVE.bat\` (el nombre histórico del primer lanzador se conserva temporalmente). Los scripts de compilación se han diferenciado para producir paquetes EvaluaFPCanarias.
+```
+En Windows pueden utilizarse `INICIAR_EVALUAFP.bat` y `CREAR_VERSION_PENDRIVE.bat` (el nombre histórico del primer lanzador se conserva temporalmente). Los scripts de compilación se han diferenciado para producir paquetes EvaluaFPCanarias.
 
-\`\`\`bash
+```bash
 python -m unittest discover -s tests -v
-\`\`\`
+```
 
 GitHub Actions contiene comprobación de pruebas y un flujo manual de portátiles Linux/macOS. **No se afirma que haya ejecutables generados o validados para esta edición** hasta verificar los artefactos y una prueba real de apertura en cada sistema.
 
