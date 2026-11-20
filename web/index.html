@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#102b45">
+<meta name="app-token" content="%%TOKEN%%">
+<title>EvalúaFP Canarias · Administración y Gestión</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
+<link rel="stylesheet" href="/style.css">
+<script defer src="/app.js"></script>
+</head>
+<body>
+<div class="layout">
+ <aside class="sidebar">
+  <div class="brand"><img class="brand-icon" src="/logo.svg" alt="Icono de EvalúaFP"><div><strong>EvalúaFP</strong><small>Evaluación FP · Canarias · Local</small></div></div>
+  <p class="menu-heading">TU TRABAJO</p>
+  <nav id="nav">
+   <button class="nav-link active" data-page="inicio"><span>⌂</span> Inicio</button>
+   <button class="nav-link" data-page="preparar"><span>▤</span> Preparar módulo</button>
+   <button class="nav-link" data-page="examenes"><span>✎</span> Crear pruebas</button>
+   <button class="nav-link" data-page="entregas"><span>▧</span> Cargar trabajos</button>
+   <button class="nav-link" data-page="correcciones"><span>☑</span> Corregir y revisar</button>
+   <button class="nav-link" data-page="evaluacion"><span>▥</span> Evaluación</button>
+  </nav>
+  <div class="sidebar-advanced" id="advanced-nav" hidden>
+   <p class="menu-heading">HERRAMIENTAS AVANZADAS</p>
+   <nav>
+    <button class="nav-link" data-page="programaciones"><span>⚙</span> Editar RA, CE y pesos</button>
+    <button class="nav-link" data-page="ajustes"><span>⚙</span> IA y almacenamiento</button>
+   </nav>
+  </div>
+  <button class="nav-link mode-switch" type="button" id="toggle-advanced" aria-expanded="false">Mostrar opciones avanzadas</button>
+  <div class="side-footer"><span class="dot"></span> Funcionamiento local<br><small>SQLite · Archivos originales conservados</small></div>
+ </aside>
+ <div class="main-wrap">
+  <header class="topbar"><div><span class="eyebrow">ADMINISTRACIÓN Y GESTIÓN · CANARIAS</span><h1 id="page-title">Panel de control</h1></div>
+  <div class="top-right"><span class="top-pill">● Base de datos local</span><span class="version">v1.2.10 AG-CN beta · EvalúaFP Canarias</span></div></header>
+  <main class="content" id="main"><p>Cargando…</p></main>
+  <footer class="foot">Las calificaciones solo son definitivas después de la validación docente. No envíe datos personales a una API sin autorización del responsable del tratamiento.</footer>
+ </div>
+</div>
+<div id="toast" aria-live="polite"></div>
+<!-- Presentación de la aplicación en cada apertura. Se oculta automáticamente a los 10 segundos. -->
+<div class="intro-overlay" id="intro-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="intro-title" aria-describedby="intro-description">
+ <div class="intro-card">
+  <img src="/logo.svg" alt="Logotipo EvalúaFP" class="intro-logo">
+  <p class="intro-kicker">EDICIÓN PARA ADMINISTRACIÓN Y GESTIÓN · CANARIAS</p>
+  <h2 id="intro-title">EvalúaFP Canarias <span>v1.2.10 AG-CN beta</span></h2>
+  <p id="intro-description">Generación de exámenes · Corrección asistida por IA · Gestión local con SQLite</p>
+  <div class="intro-developer"><small>DESARROLLADO POR</small><strong>FRANCISCO JAVIER GONZALEZ ROLO</strong></div>
+  <p class="intro-time">Esta ventana se cerrará automáticamente en <span id="intro-count">10</span> segundos.</p>
+  <div class="intro-progress" aria-hidden="true"><span></span></div>
+  <button id="dismiss-intro" class="btn secondary" type="button">Entrar ahora</button>
+ </div>
+</div>
+<dialog id="students-dialog" class="students-dialog" aria-labelledby="students-dialog-title">
+ <form method="dialog" id="students-create-form">
+  <h2 id="students-dialog-title">Registrar alumnado</h2>
+  <p id="students-dialog-help">Complete los datos antes de continuar.</p>
+  <div id="students-dialog-fields"></div>
+  <p id="students-dialog-error" role="alert" class="dialog-error" hidden></p>
+  <div class="dialog-actions">
+   <button class="btn mutedbtn" value="cancel" type="button" id="cancel-students">Cancelar</button>
+   <button class="btn" type="submit" id="save-students">Crear alumno y continuar</button>
+  </div>
+ </form>
+</dialog>
+</body>
+</html>

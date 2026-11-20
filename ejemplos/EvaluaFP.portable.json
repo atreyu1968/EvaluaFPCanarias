@@ -1,0 +1,5 @@
+{
+  "mode": "portable",
+  "data_dir": "EvaluaFP_Datos",
+  "backup_dir": "EvaluaFP_Copias"
+}
