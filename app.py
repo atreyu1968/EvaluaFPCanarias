@@ -997,8 +997,14 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(response)
         if path=='/api/programming-builder/save':
             mid=int(body.get('module_id',0))
+            draft=body.get('draft')
             with data.connect() as d:
-                result=program_builder.save(d,mid,body.get('draft'))
+                module=must_row(d,'SELECT territory FROM modules WHERE id=?',(mid,))
+                # Un módulo de esta edición no puede cambiar a otro territorio
+                # mediante una petición HTTP alterada, aunque el selector sea fijo.
+                if ag._fold(module['territory']) in ('canarias','cn') and isinstance(draft,dict):
+                    ag.ensure_territory(draft.get('region'))
+                result=program_builder.save(d,mid,draft)
             return self.send(result)
         if path=='/api/students':
             mid=int(body['module_id']); code=str(body.get('code','')).strip();name=str(body.get('name','')).strip()
