@@ -342,7 +342,15 @@ def diagnose(db, module_id):
                 warnings.append('Actividad sin unidad válida: '+activity['title'])
             if not activity['date']:
                 warnings.append('Actividad pendiente de fecha/confirmación: '+activity['title'])
-    return {'calendar_plan': calendar_plan, 'hours_reference': hours_reference,
+    import canarias_reference
+    module_reference=canarias_reference.read(db,module_id)
+    if module_reference:
+        warnings.append(
+            'El índice de 2024 es una referencia histórica y no confirma '
+            'los módulos ni la carga horaria vigente para este curso.'
+        )
+    return {'module_reference': module_reference,
+            'calendar_plan': calendar_plan, 'hours_reference': hours_reference,
             'module': dict(module), 'draft': draft, 'updated_at': loaded['updated_at'],
             'outcomes': ras_return, 'criteria': ces_return,
             'counts': {'ra': len(outcomes), 'ce': len(criteria), 'documents': docs,
