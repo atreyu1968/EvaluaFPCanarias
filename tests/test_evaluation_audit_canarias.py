@@ -69,3 +69,27 @@ class EvaluationAuditTests(unittest.TestCase):
         ev.update_settings(self.db,{'module_id':1,'enterprise_mode':'integrated','validated':'false',
             'teacher_note':'No es una confirmación booleana'})
         self.assertFalse(ev.summary(self.db,1,1)['settings']['validated'])
+
+
+    def test_feoe_review_invalidates_only_affected_closure(self):
+        from unittest.mock import patch
+        import canarias_feoe
+        canarias_feoe.migrate(self.db)
+        ev.import_csv(self.db,self.instrument,b'codigo_alumno;criterio;nota\nA001;RA1/a;9\nA001;RA2/a;7\n')
+        ev.import_csv(self.db,self.second,b'codigo_alumno;criterio;nota\nA001;a;5\n')
+        old=ev.close_student(self.db,1,1,'Cierre antes de FEOE')
+        evidence={'id':1,'student_id':1,'current_curriculum':True,
+                  'valuation':{'id':1,'status':'superado'},'teacher_review':None}
+        with patch.object(canarias_feoe,'module_evidence',return_value=[evidence]):
+            st=ev.summary(self.db,1,1)['students'][0]
+            self.assertIsNone(st['final_score'])
+            self.assertFalse(st['closure']['current'])
+            with self.assertRaises(ValueError):
+                ev.close_student(self.db,1,1,'Cierre sin revisión')
+            evidence['teacher_review']={'id':1,'notes':'Contrastado'}
+            new=ev.close_student(self.db,1,1,'Cierre con revisión')
+            self.assertNotEqual(new['id'],old['id'])
+            self.assertTrue(ev.summary(self.db,1,1)['students'][0]['closure']['current'])
+            evidence['valuation']={'id':2,'status':'no_superado'}
+            evidence['teacher_review']=None
+            self.assertFalse(ev.summary(self.db,1,1)['students'][0]['closure']['current'])
