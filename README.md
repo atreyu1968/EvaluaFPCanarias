@@ -110,3 +110,19 @@ GitHub Actions ha superado **307 pruebas** y ha generado los cuatro paquetes por
 ## Consulta curricular de los módulos contables
 
 Los módulos 0441 y 0443 permiten consultar la publicación original del RD 1631/2009 sin escribir su identificador. Se exige que la extracción incluya todos los RA y CE consecutivos: 0441 (5 RA, 41 CE), 0443 (4 RA, 34 CE). La consulta no crea notas ni asigna ponderaciones y requiere revisión docente. La fuente original debe contrastarse con el RD 499/2024 y la normativa canaria. Las pruebas utilizan documentos artificiales y no certifican la vigencia curricular.
+
+## Ampliación a los nueve módulos específicos de Gestión Administrativa
+
+El extractor permite recuperar los RA y CE de la publicación original del RD 1631/2009 para los nueve módulos específicos actuales del índice canario. Comprueba 54 RA y 440 CE en total (no son una certificación autonómica de vigencia). En caso de falta o duplicación de criterios rechaza la extracción antes de ofrecerla. Se mantienen fuera de esta recuperación los módulos transversales del nuevo sistema hasta identificar sus normas aplicables. No se importan horas ni ponderaciones desde la norma estatal.
+
+| Código | Módulo | RA | CE |
+| --- | --- | ---: | ---: |
+| 0437 | Comunicación empresarial y atención al cliente | 8 | 76 |
+| 0438 | Operaciones administrativas de compraventa | 5 | 43 |
+| 0439 | Empresa y administración | 7 | 50 |
+| 0440 | Tratamiento informático de la información | 8 | 62 |
+| 0441 | Técnica contable | 5 | 41 |
+| 0442 | Operaciones administrativas de recursos humanos | 6 | 50 |
+| 0443 | Tratamiento de la documentación contable | 4 | 34 |
+| 0446 | Empresa en el aula | 7 | 49 |
+| 0448 | Operaciones auxiliares de gestión de tesorería | 4 | 35 |

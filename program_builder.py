@@ -353,7 +353,9 @@ def diagnose(db, module_id):
             'El índice de 2024 es una referencia histórica y no confirma '
             'los módulos ni la carga horaria vigente para este curso.'
         )
-    return {'module_reference': module_reference,
+    import curriculum_official
+    return {'curriculum_source_hint': curriculum_official.source_hint(module['name']),
+            'module_reference': module_reference,
             'calendar_plan': calendar_plan, 'hours_reference': hours_reference,
             'module': dict(module), 'draft': draft, 'updated_at': loaded['updated_at'],
             'outcomes': ras_return, 'criteria': ces_return,
