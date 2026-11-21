@@ -294,6 +294,14 @@ def summary(d,module_id,student_id=None):
         if abs(total-100)>0.01:check_warnings.append(f'{ce["ra_code"]}·{ce["code"]}: los instrumentos suman {total:g} % (deben sumar 100 %).')
     scores_by= {(s['student_id'],s['instrument_id'],s['criterion_id']):s for s in scores if s['teacher_validated']}
 
+    # Solo consultar FEOE cuando existe el esquema (compatibilidad con bases
+    # antiguas y pruebas mínimas). No transformar superado/no superado en nota.
+    feoe_by_student=defaultdict(list)
+    if d.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='feoe_targets'").fetchone():
+        import canarias_feoe
+        for evidence in canarias_feoe.module_evidence(d,mid):
+            feoe_by_student[evidence['student_id']].append(evidence)
+
     def student_result(student):
         sid=student['id'];ce_scores={};ce_details=[]
         for ce in ces:
@@ -335,7 +343,10 @@ def summary(d,module_id,student_id=None):
                     if (s:=scores_by.get((sid,i['id'],t['criterion_id']))) is not None]
         fe_complete=bool(fe_planned) and len(fe_records)==len(fe_planned)
         fe_score=round(sum(g*w for g,w in fe_records)/sum(w for g,w in fe_records),2) if fe_records else None
-        complete=not check_warnings and all(r['complete'] for r in ra_details)
+        company_evidence=feoe_by_student[sid]
+        company_pending=any(not e['current_curriculum'] or not e['valuation'] or not e['teacher_review']
+                            for e in company_evidence)
+        complete=not check_warnings and all(r['complete'] for r in ra_details) and not company_pending
         if policy['enterprise_mode']=='separate' and not fe_complete:complete=False
         final=None
         if complete:
@@ -344,12 +355,18 @@ def summary(d,module_id,student_id=None):
         closure_row=d.execute('SELECT id,score,teacher_justification,evidence_sha256,validated_at FROM evaluation_closures WHERE module_id=? AND student_id=? ORDER BY id DESC LIMIT 1',(mid,sid)).fetchone()
         closure=dict(closure_row) if closure_row else None
         current_digest=_student_digest(policy,ras,ces,instrs,[s for s in scores if s['student_id']==sid])
+        if company_evidence:
+            # Incluye identidad, versión curricular, valoración y revisión.
+            # Cualquier nueva valoración/revisión obliga a contrastar el cierre.
+            current_digest=hashlib.sha256(json.dumps({'base':current_digest,
+                'feoe':sorted(company_evidence,key=lambda e:e['id'])},
+                sort_keys=True,ensure_ascii=False,default=str).encode('utf-8')).hexdigest()
         if closure:
-            closure['current']=closure['evidence_sha256']==current_digest
+            closure['current']=bool(complete and closure['score']==final and closure['evidence_sha256']==current_digest)
         return {'student_id':sid,'code':student['code'],'name':student['name'],'criteria':ce_details,
                 'outcomes':ra_details,'terms':terms,'enterprise_score':fe_score,
                 'final_score':final,'status':'calculable (pendiente de cierre docente)' if complete else 'incompleta',
-                'warnings':([] if complete else ['Faltan ponderaciones, instrumentos o evidencias validadas.']),
+                'warnings':([] if complete else ['Faltan ponderaciones, instrumentos o evidencias validadas.'])+(['Hay valoraciones FEOE pendientes de revisión o de cotejo curricular.'] if company_pending else []),
                 'closure':closure,'evidence_sha256':current_digest}
     if student_id:
         students=[s for s in students if s['id']==int(student_id)]
