@@ -174,23 +174,30 @@ function agCycleOptions(){
 }
 
 async function loadAGModuleSuggestions(form){
- const list=form.querySelector('#ag-module-list'), note=form.querySelector('#ag-module-note');
- if(!list||!note)return;
- const cycle=form.elements.cycle?.value||'', year=form.elements.academic_year?.value||'';
- list.innerHTML='';
+ const list=form.querySelector('#ag-module-list'),pick=form.querySelector('#ag-module-pick'),note=form.querySelector('#ag-module-note');
+ if(!list||!pick||!note)return;
+ const cycle=form.elements.cycle?.value||'',year=form.elements.academic_year?.value||'',course=form.querySelector('#ag-course-filter')?.value||'';
+ list.innerHTML='';pick.innerHTML='<option value="">Seleccione primero un ciclo</option>';
  if(!cycle){note.textContent='Seleccione un ciclo para consultar sus módulos.';return;}
- note.textContent='Consultando módulos de referencia de Canarias…';
+ note.textContent='Consultando el índice documental de módulos de Canarias…';
  try{
-   const data=await API('/api/canarias-ag/modules?cycle='+encodeURIComponent(cycle)+
-      '&academic_year='+encodeURIComponent(year));
-   if(!form.isConnected||form.elements.cycle?.value!==cycle||form.elements.academic_year?.value!==year)return;
-   list.innerHTML=(data.modules||[]).map(m=>'<option value="'+E(m.name)+
-     '" label="'+E((m.code||'Sin código')+' · '+m.course+'º · '+m.reference_annual_hours+' h de referencia')+'"></option>').join('');
-   note.textContent=data.count?
-      data.count+' módulos del anexo VI de 2024. Seleccione una denominación o escriba otra. Las horas y la vigencia 2026-2027 deben verificarse; no se importan automáticamente.':
-      'El índice de módulos de Grado Básico está pendiente. Escriba el módulo según su currículo oficial.';
+   const url='/api/canarias-ag/modules?cycle='+encodeURIComponent(cycle)+
+       '&academic_year='+encodeURIComponent(year)+'&territory=Canarias'+
+       (course?'&course='+encodeURIComponent(course):'');
+   const data=await API(url);
+   if(!form.isConnected||form.elements.cycle?.value!==cycle||form.elements.academic_year?.value!==year||
+      (form.querySelector('#ag-course-filter')?.value||'')!==course)return;
+   const modules=data.modules||[];
+   list.innerHTML=modules.map(m=>'<option value="'+E(m.name)+
+      '" label="'+E((m.code||'Sin código RD')+' · '+m.course+'º · '+m.reference_annual_hours+' h (referencia de 2024)')+'"></option>').join('');
+   pick.innerHTML='<option value="">Seleccione un módulo o escríbalo manualmente</option>'+
+      modules.map(m=>'<option value="'+E(m.name)+'">'+E((m.code||'Sin código RD')+' · '+m.name+' · '+m.course+'º')+'</option>').join('');
+   const annex=cycle.startsWith('CFGB')?'V':'VI';
+   note.textContent=data.count+' referencias del anexo '+annex+' de 2024'+
+      (course?' para '+course+'º curso':'')+'. La lista no acredita la vigencia para '+year+
+      ', ni importa automáticamente horas, RA o CE. Compruebe la normativa de su módulo.';
  }catch(err){
-   if(form.isConnected)note.textContent='No se ha podido consultar el índice de módulos. Puede escribir la denominación manualmente.';
+   if(form.isConnected)note.textContent='No se ha podido consultar el índice. Escriba la denominación del módulo manualmente.';
  }
 }
 function resolveAGCycle(text){
@@ -949,7 +956,9 @@ async function viewPrepare(){
  <div class="field"><label>Curso académico</label><input name="academic_year" required value="2026-2027"></div>
  <div class="field"><label>Comunidad autónoma / ámbito educativo</label><select name="territory" required>${territoryOptions('Canarias')}</select></div>
  <div class="field"><label>Ciclo formativo</label><select name="cycle" required>${agCycleOptions()}</select></div>
- <div class="field"><label>Nombre del módulo</label><input name="name" required list="ag-module-list" placeholder="Selecciona del listado o escribe el nombre"><datalist id="ag-module-list"></datalist><p class="small" id="ag-module-note">Elige un ciclo para consultar módulos de referencia.</p></div>
+ <div class="field"><label for="ag-course-filter">Curso del ciclo (filtro opcional)</label><select id="ag-course-filter"><option value="">Primero y segundo</option><option value="1">1.º curso</option><option value="2">2.º curso</option></select></div>
+ <div class="field"><label for="ag-module-pick">Elegir módulo de la lista de referencia</label><select id="ag-module-pick"><option value="">Seleccione primero un ciclo</option></select></div>
+ <div class="field"><label>Nombre del módulo (editable)</label><input name="name" required list="ag-module-list" placeholder="Selecciona del listado o escribe el nombre"><datalist id="ag-module-list"></datalist><p class="small" id="ag-module-note">Elige un ciclo para consultar módulos de referencia.</p></div>
  <div class="field"><label>Grupo (opcional)</label><input name="group_name" placeholder="1.º A"></div>
  <input type="hidden" name="catalog_entry_id"><p class="small" data-catalog-selection></p>
  <button class="btn" type="submit">Crear módulo y continuar</button></form></section>${catalogPanel()}`;return;}
@@ -1128,7 +1137,9 @@ async function viewPrograms(){
  <div class="field"><label>Curso académico</label><input required name="academic_year" value="2026-2027" placeholder="2026-2027"></div>
  <div class="field"><label>Comunidad autónoma / ámbito educativo</label><select name="territory" required>${territoryOptions('Canarias')}</select></div>
  <div class="field"><label>Ciclo formativo</label><select required name="cycle">${agCycleOptions()}</select></div>
- <div class="field"><label>Módulo profesional</label><input required name="name" list="ag-module-list" placeholder="Selecciona del listado o escribe el nombre"><datalist id="ag-module-list"></datalist><p class="small" id="ag-module-note">Elige un ciclo para consultar módulos de referencia.</p></div>
+ <div class="field"><label for="ag-course-filter">Curso del ciclo (filtro opcional)</label><select id="ag-course-filter"><option value="">Primero y segundo</option><option value="1">1.º curso</option><option value="2">2.º curso</option></select></div>
+ <div class="field"><label for="ag-module-pick">Elegir módulo de la lista de referencia</label><select id="ag-module-pick"><option value="">Seleccione primero un ciclo</option></select></div>
+ <div class="field"><label>Módulo profesional (editable)</label><input required name="name" list="ag-module-list" placeholder="Selecciona del listado o escribe el nombre"><datalist id="ag-module-list"></datalist><p class="small" id="ag-module-note">Elige un ciclo para consultar módulos de referencia.</p></div>
  <div class="field"><label>Grupo</label><input name="group_name" placeholder="1.º A"></div>
  <input type="hidden" name="catalog_entry_id"><p class="small" data-catalog-selection></p>
  <button class="btn" type="submit">Crear módulo</button></form></div>
@@ -1659,15 +1670,33 @@ document.addEventListener('change',async event=>{
 
  try {
  const el=event.target;
+ if(el.id==='ag-module-pick'){
+   const form=el.closest('#prepare-create,#create-module');
+   if(form){
+      form.elements.name.value=el.value||'';
+      form.dataset.agPickedName=el.value||'';
+      if(form.elements.catalog_entry_id?.value){form.elements.catalog_entry_id.value='';S.catalogPicked=null;}
+      const note=form.querySelector('[data-catalog-selection]');
+      if(note)note.textContent='La lista orientativa no confirma el currículo ni sus horas.';
+   }
+   return;
+ }
  if(el.closest('#prepare-create,#create-module') &&
-    ['cycle','name','territory','academic_year'].includes(el.name)){
+    (['cycle','name','territory','academic_year'].includes(el.name)||el.id==='ag-course-filter')){
    const form=el.form;
+   if(el.name==='cycle'||el.name==='academic_year'||el.id==='ag-course-filter'){
+      if(form.dataset.agPickedName&&form.elements.name.value===form.dataset.agPickedName)form.elements.name.value='';
+      form.dataset.agPickedName='';
+   }else if(el.name==='name'&&el.value!==form.dataset.agPickedName){
+      const pick=form.querySelector('#ag-module-pick');if(pick)pick.value='';
+      form.dataset.agPickedName='';
+   }
    if(form?.elements.catalog_entry_id?.value){
       form.elements.catalog_entry_id.value='';S.catalogPicked=null;
       const note=form.querySelector('[data-catalog-selection]');
       if(note)note.textContent='Selección del catálogo anulada al modificar el módulo o el ámbito.';
    }
-   if(el.name==='cycle'||el.name==='academic_year')await loadAGModuleSuggestions(form);
+   if(el.name==='cycle'||el.name==='academic_year'||el.id==='ag-course-filter')await loadAGModuleSuggestions(form);
    if(el.name==='territory'||el.name==='academic_year'){
       S.catalogResults=null;S.catalogPreview=null;S.catalogPreviewScope=null;updateCatalogResults();
       S.todofpResult=null;S.todofpTitleSearch=null; // No arrastrar títulos o fuentes de otro curso/territorio.

@@ -532,6 +532,13 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send(national_registry.propose_module_sources(d,mid))
                 if path=='/api/canarias-ag/catalog':
                     return self.send(ag.public_catalog())
+                if path=='/api/canarias-ag/modules':
+                    import canarias_modules
+                    ag.ensure_territory((args.get('territory') or ['Canarias'])[0])
+                    cycle=(args.get('cycle') or [''])[0]
+                    year=(args.get('academic_year') or [''])[0]
+                    course=(args.get('course') or [None])[0]
+                    return self.send(canarias_modules.list_modules(cycle,year,course=course))
                 if path=='/api/territories':
                     return self.send({'territories':[{'code':'CN','label':'Canarias'}]})
                 if path=='/api/territories/calendar':

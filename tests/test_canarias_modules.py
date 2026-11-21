@@ -39,6 +39,27 @@ class ModuleReferenceTests(unittest.TestCase):
     def test_other_cycles_disallowed(self):
         with self.assertRaises(ValueError):
             list_modules("CFGM Cuidados Auxiliares", "2026-2027")
+    def test_course_filter_keeps_reference_metadata(self):
+        for cycle, total, first, second in [
+            ("CFGB Servicios Administrativos",16,8,8),
+            ("CFGM Gestión Administrativa",15,8,7),
+            ("CFGS Administración y Finanzas",16,8,8),
+            ("CFGS Asistencia a la Dirección",15,8,7),
+        ]:
+            with self.subTest(cycle=cycle):
+                one=list_modules(cycle,"2026-2027",course="1")
+                two=list_modules(cycle,"2026-2027",course=2)
+                self.assertEqual((one["count"],two["count"],one["total_count"]),
+                                 (first,second,total))
+                self.assertTrue(all(m["course"]==1 and not m["curriculum_confirmed"]
+                                    for m in one["modules"]))
+                self.assertTrue(all(m["course"]==2 and not m["hours_confirmed"]
+                                    for m in two["modules"]))
+                self.assertEqual((one["filter_course"],two["filter_course"]),(1,2))
+    def test_bad_course_filter_is_rejected(self):
+        for course in ("0","3","1;DROP",True):
+            with self.subTest(course=course), self.assertRaises(ValueError):
+                list_modules("CFGM Gestión Administrativa","2026-2027",course=course)
     def test_invalid_academic_year(self):
         with self.assertRaises(ValueError):
             list_modules("CFGM Gestión Administrativa", "2026-2026")

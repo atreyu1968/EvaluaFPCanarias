@@ -33,9 +33,9 @@ Los Grados A, B y C de la familia **no son equivalentes automáticamente a los G
 9. Fiscalidad didáctica canaria: los casos de tributación indirecta deben utilizar IGIC cuando corresponda y verificar los tipos aplicables.
 
 
-## Selección asistida de módulos (beta.2)
+## Selección asistida de módulos (beta.4)
 
-En **Preparar módulo**, al seleccionar un ciclo, se consulta el índice documental de módulos de Gestión Administrativa, Administración y Finanzas y Asistencia a la Dirección. El docente puede elegir la denominación de la lista o escribirla manualmente.
+En **Preparar módulo**, al seleccionar un ciclo, se consulta el índice documental de módulos de Gestión Administrativa, Administración y Finanzas y Asistencia a la Dirección. El docente puede filtrar por **1.º o 2.º curso**, elegir el módulo en un selector legible o escribir su denominación manualmente. La consulta se realiza en el servidor, sin necesidad de instalar un catálogo externo.
 
 - **15 referencias** de CFGM Gestión Administrativa.
 - **16 referencias** de CFGS Administración y Finanzas.
@@ -43,7 +43,7 @@ En **Preparar módulo**, al seleccionar un ciclo, se consulta el índice documen
 - **16 referencias** de CFGB Servicios Administrativos, incluidas materias de los ámbitos generales sin código RD. Se excluye Tutoría por no constituir un módulo con RA/CE.
 - La optativa queda como entrada manual porque requiere la oferta concreta del centro.
 
-**Importante:** códigos, denominaciones y horas son una **referencia del Anexo VI de 2024**, no una certificación automática de vigencia para el curso 2026-2027. La aplicación NO rellena las horas de programación ni los RA/CE a partir de este índice.
+**Importante:** códigos, denominaciones y horas son una **referencia de los anexos V (CFGB) y VI (GM/GS) de 2024**, no una certificación automática de vigencia para el curso 2026-2027. La aplicación NO rellena las horas de programación ni los RA/CE a partir de este índice.
 
 [Documentación del índice curricular](docs/INDICE_MODULOS_CANARIAS_AG.md).
 

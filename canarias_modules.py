@@ -96,12 +96,16 @@ SOURCE_PAGE = {
 }
 
 
-def list_modules(cycle: str, academic_year: str) -> dict:
+def list_modules(cycle: str, academic_year: str, course: str | int | None = None) -> dict:
     """Lista de propuestas de denominación, nunca material académico confirmado."""
     from territorial_profiles import year_code
     year = year_code(academic_year)
     canonical = canarias_ag.canonical_cycle(cycle)
-    rows = REGISTRY.get(canonical, ())
+    if course not in (None, '') and str(course) not in ('1','2'):
+        raise ValueError('El curso del ciclo debe ser primero o segundo.')
+    selected_course = int(course) if course not in (None, '') else None
+    complete = REGISTRY[canonical]
+    rows = [item for item in complete if selected_course is None or item[2] == selected_course]
     is_basic = canonical == 'CFGB Servicios Administrativos'
     source = BASIC_SOURCE_URL if is_basic else SOURCE_URL
     source_title = BASIC_SOURCE_TITLE if is_basic else SOURCE_TITLE
@@ -116,6 +120,7 @@ def list_modules(cycle: str, academic_year: str) -> dict:
     return {
         "territory": "Canarias", "family": "Administración y Gestión",
         "academic_year": year, "cycle": canonical, "count": len(items),
+        "total_count": len(complete), "filter_course": selected_course,
         "modules": items, "source_url": source, "source_title": source_title,
         "reference_academic_year": REFERENCE_YEAR,
         "status": "reference_requires_current_verification",
