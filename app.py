@@ -1132,6 +1132,9 @@ class Handler(BaseHTTPRequestHandler):
                 d.execute('UPDATE materials SET active=? WHERE id=?',(int(active),pid))
                 data.log(d,'material_status_changed','material',pid,{'active':active})
             return self.send({'ok':True,'active':active})
+        if path=='/api/academic-decisions/evaluate':
+            import canarias_academic_decisions
+            return self.send(canarias_academic_decisions.evaluate(body))
         if path in ('/api/common-scopes/recovery-create','/api/common-scopes/recovery-review'):
             import common_scope_recovery as recovery
             mid=int(body['module_id'])
