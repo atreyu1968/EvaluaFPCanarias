@@ -29,3 +29,23 @@ El selector muestra las siguientes disposiciones estatales de título, **sin imp
 - CFGS Asistencia a la Dirección: [RD 1582/2011](https://www.boe.es/eli/es/rd/2011/11/04/1582).
 
 Estas disposiciones deben contrastarse con las modificaciones posteriores, los módulos transversales actuales y la normativa autonómica canaria aplicable al curso y al centro. Ninguna de estas referencias marca `curriculum_confirmed=true` ni asigna ponderaciones.
+
+## Ficha histórica persistente por módulo (beta.4)
+
+Al crear un módulo mediante el selector documental, su nombre, código, curso
+(1.º o 2.º), distribución de horas de referencia, anexo/página y enlaces de 2024
+se guardan en la tabla local `canarias_module_references`. La aplicación vuelve
+a comprobar esos datos contra el índice antes de guardarlos y presenta la
+procedencia en la pantalla de preparación.
+
+Se trata de una **captura de fuente, no de una norma vigente acreditada**.
+La información no se copia a las horas de programación, no establece el código
+curricular definitivo y no añade RA/CE, ponderaciones o calificaciones. Los
+módulos creados a mano, incluidas las optativas, no se vinculan por defecto a una
+referencia histórica. Las denominaciones repetidas en 1.º y 2.º se distinguen
+por curso y código.
+
+La prueba de integración `tests/test_canarias_module_references.py` comprueba
+la creación con fuente, el rechazo de referencias alteradas, los códigos ausentes,
+las denominaciones repetidas y la independencia entre fuente e información
+curricular confirmada.
