@@ -475,6 +475,14 @@ class Handler(BaseHTTPRequestHandler):
                         stats[table]=d.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]
                     return self.send(stats)
                 if path=='/api/modules':return self.send(data.dicts(d.execute('SELECT * FROM modules ORDER BY id DESC')))
+                if path in ('/api/cycle-record/roster','/api/cycle-record/report'):
+                    import canarias_cycle_record as cycle_record
+                    mid=int((args.get('module_id') or ['0'])[0])
+                    if path.endswith('/roster'):
+                        return self.send(cycle_record.roster(d,mid))
+                    sid=int((args.get('student_id') or ['0'])[0])
+                    session=(args.get('session') or ['ordinaria'])[0]
+                    return self.send(cycle_record.report(d,mid,sid,session))
                 if path=='/api/common-scopes/recovery':
                     import common_scope_recovery as recovery
                     mid=int((args.get('module_id') or ['0'])[0])
@@ -1132,6 +1140,13 @@ class Handler(BaseHTTPRequestHandler):
                 d.execute('UPDATE materials SET active=? WHERE id=?',(int(active),pid))
                 data.log(d,'material_status_changed','material',pid,{'active':active})
             return self.send({'ok':True,'active':active})
+        if path=='/api/cycle-record/decision':
+            import canarias_cycle_record as cycle_record
+            mid=int(body['module_id'])
+            sid=int(body['student_id'])
+            with data.connect() as d:
+                result=cycle_record.record(d,mid,sid,body.get('decision'))
+            return self.send(result)
         if path=='/api/academic-decisions/evaluate':
             import canarias_academic_decisions
             return self.send(canarias_academic_decisions.evaluate(body))
