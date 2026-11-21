@@ -50,6 +50,23 @@ En **Preparar módulo**, al seleccionar un ciclo, se consulta el índice documen
 
 [Documentación del índice curricular](docs/INDICE_MODULOS_CANARIAS_AG.md).
 
+## Ficha de procedencia al crear un módulo
+
+Al elegir un módulo en el selector, EvalúaFP registra una **copia de referencia** que
+identifica ciclo, módulo, código (cuando existe), curso primero o segundo, distribución
+horaria del anexo de 2024, página y enlace de procedencia. El registro se almacena en
+SQLite en `canarias_module_references` y se muestra al entrar en «Preparar mi módulo».
+
+**Esta ficha no es una programación ni una validación curricular.** Las horas históricas
+no pasan al calendario, el código no se da por validado en la programación, y no se
+crean RA, CE, ponderaciones ni calificaciones. La validación debe hacerse por curso,
+centro y normativa aplicable. Las optativas y módulos escritos manualmente no
+generan una ficha de 2024 ficticia.
+
+Los datos de referencia se validan nuevamente en el servidor, por nombre, código,
+ciclo y curso; una selección manipulada o incoherente se rechaza. Las bases SQLite
+de la edición general y de la edición Canarias continúan separadas.
+
 ## IMPORTANTE: fuentes y currículo
 
 Los **títulos** están identificados, pero esta beta **no contiene un catálogo de módulos, horas, RA y CE completo y validado para 2026-2027**. Para crear un módulo se elige su ciclo y se incorpora su programación o documentación oficial. La herramienta permite revisar y confirmar las propuestas del docente, sin certificar normas por IA ni inventar resultados.
