@@ -8,7 +8,7 @@ class CanaryLandingTests(unittest.TestCase):
     def test_downloads_come_from_current_repository(self):
         html=(ROOT/"docs"/"index.html").read_text(encoding="utf-8")
         self.assertIn('id="descargas"',html)
-        self.assertIn('evaluafp-canarias',html.lower())
+        self.assertIn('atreyu1968/evaluafpcanarias',html.lower())
         self.assertIn('actions/runs/44909845819',html)
         self.assertIn('actions/runs/44909680492',html)
         self.assertIn('macOS · Intel y Apple Silicon',html)
