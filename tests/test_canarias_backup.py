@@ -80,7 +80,7 @@ class BackupTests(unittest.TestCase):
         result=backup.recover_archive(good.parent,self.data,good.name,True)
         self.assertTrue(result['active_data_unchanged'])
         dest=Path(result['path'])
-        self.assertEqual(dest.parent,self.data.parent)
+        self.assertEqual(dest.parent.resolve(),self.data.parent.resolve())
         self.assertNotEqual(dest,self.data)
         self.assertTrue((dest/backup.DB_MEMBER).is_file())
         self.assertTrue(self.db.is_file())
