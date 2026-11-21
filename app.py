@@ -534,6 +534,11 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send(ag.public_catalog())
                 if path=='/api/canarias-ag/modules':
                     import canarias_modules
+                    cycle=(args.get('cycle') or [''])[0]
+                    year=(args.get('academic_year') or [''])[0]
+                    return self.send(canarias_modules.list_modules(cycle,year))
+                if path=='/api/canarias-ag/modules':
+                    import canarias_modules
                     ag.ensure_territory((args.get('territory') or ['Canarias'])[0])
                     cycle=(args.get('cycle') or [''])[0]
                     year=(args.get('academic_year') or [''])[0]
