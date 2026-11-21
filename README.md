@@ -82,7 +82,7 @@ Fuentes normativas de referencia:
 
 Se incorpora un flujo de GitHub Actions para compilar **Windows x64** y se mantiene el flujo para **Linux x64, macOS Intel y Apple Silicon**, con pruebas y comprobación de arranque de los binarios. Los archivos resultantes son artefactos temporales de Actions, **sin firma de código ni notarización**; la generación automática no sustituye una apertura real y una prueba funcional en cada sistema. Los ZIP/TAR.GZ no incorporan información personal.
 
-**Artefactos de prueba disponibles (retención de 30 días, requiere inicio de sesión en GitHub):** [Windows x64](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44909845819) · [Linux x64 y macOS Intel/Apple Silicon](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44909680492). La [landing de la edición canaria](docs/index.html#descargas) permite encontrar cada plataforma. Las compilaciones han superado sus autopruebas, pero falta validación visual en sistemas reales.
+**Artefactos de prueba de la beta.4 (retención de 30 días, requiere inicio de sesión en GitHub):** [Windows x64](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44918796302) · [Linux x64 y macOS Intel/Apple Silicon](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44918800198). La [landing de la edición canaria](docs/index.html#descargas) permite encontrar cada plataforma. Las compilaciones han superado sus autopruebas, pero falta validación visual en sistemas reales.
 
 ## Instalación y pruebas
 
