@@ -49,7 +49,22 @@ AD_SUPPORTED = {
     'organizacion de eventos empresariales': ('BOE-A-2011-19531', '0662'),
     'gestion avanzada de la informacion': ('BOE-A-2011-19531', '0663'),
 }
+# Servicios Administrativos: solo módulos profesionales del anexo I.
+GB_SUPPORTED = {
+    'tratamiento informatico de datos': ('BOE-A-2014-2360', '3001'),
+    'aplicaciones basicas de ofimatica': ('BOE-A-2014-2360', '3002'),
+    'tecnicas administrativas basicas': ('BOE-A-2014-2360', '3003'),
+    'archivo y comunicacion': ('BOE-A-2014-2360', '3004'),
+    'atencion al cliente': ('BOE-A-2014-2360', '3005'),
+    'preparacion de pedidos y venta de productos': ('BOE-A-2014-2360', '3006'),
+}
 EXPECTED_COVERAGE = {
+    ('BOE-A-2014-2360', '3001'): (7, 10, 7, 10),
+    ('BOE-A-2014-2360', '3002'): (7, 7, 6, 6),
+    ('BOE-A-2014-2360', '3003'): (5, 9, 9, 8),
+    ('BOE-A-2014-2360', '3004'): (9, 10, 8, 8),
+    ('BOE-A-2014-2360', '3005'): (9, 8, 8, 6),
+    ('BOE-A-2014-2360', '3006'): (6, 7, 6, 6),
     ('BOE-A-2011-19531', '0647'): (6, 7, 8, 8, 11),
     ('BOE-A-2011-19531', '0648'): (6, 5, 8, 8, 10),
     ('BOE-A-2011-19531', '0649'): (8, 10, 11, 10, 8, 8, 5, 10, 6),
@@ -81,15 +96,23 @@ EXPECTED_COVERAGE = {
 }
 TITLE_AMENDMENT = 'https://www.boe.es/eli/es/rd/2024/05/21/499'
 TITLE_CONSOLIDATED_REFERENCE = 'https://www.boe.es/eli/es/rd/2009/10/30/1631/con'
+GB_CYCLE = 'CFGB Servicios Administrativos'
 GA_CYCLE = 'CFGM Gestión Administrativa'
 AF_CYCLE = 'CFGS Administración y Finanzas'
 AD_CYCLE = 'CFGS Asistencia a la Dirección'
 ORIGINAL_TITLE_BY_CYCLE = {
+    GB_CYCLE: 'BOE-A-2014-2360',
     GA_CYCLE: 'BOE-A-2009-19148',
     AF_CYCLE: 'BOE-A-2011-19533',
     AD_CYCLE: 'BOE-A-2011-19531',
 }
 TITLE_LINKS = {
+    'BOE-A-2014-2360': {
+        'state_title':'https://www.boe.es/eli/es/rd/2014/02/28/127/con',
+        'state_amendment':'https://www.boe.es/eli/es/rd/2024/05/21/498',
+        'canarias_curriculum':'https://www.gobiernodecanarias.org/boc/2023/025/001.html',
+        'canarias_annex_3':'https://www.gobiernodecanarias.org/cmsweb/export/sites/educacion/web/formacion_profesional/_galerias/descargas/cfgb/4_CFGB-_servicios_administrativos.pdf',
+    },
     'BOE-A-2011-19531': {
         'state_title':'https://www.boe.es/eli/es/rd/2011/11/04/1582/con',
         'state_amendment':'https://www.boe.es/eli/es/rd/2024/05/21/500',
@@ -160,6 +183,8 @@ def _cycle_key(cycle):
 def _template_for(module_name, cycle=None):
     key = _module_key(module_name)
     cycle = _cycle_key(cycle)
+    if cycle == GB_CYCLE:
+        return GB_SUPPORTED.get(key)
     if cycle == GA_CYCLE:
         return SUPPORTED.get(key)
     if cycle == AF_CYCLE:
@@ -168,7 +193,7 @@ def _template_for(module_name, cycle=None):
         return AD_SUPPORTED.get(key)
     if cycle is None:  # Compatibilidad para clientes antiguos.
         # Sin ciclo no se elige arbitrariamente entre dos títulos.
-        candidates = [reg[key] for reg in (SUPPORTED, AF_SUPPORTED, AD_SUPPORTED) if key in reg]
+        candidates = [reg[key] for reg in (SUPPORTED, AF_SUPPORTED, AD_SUPPORTED, GB_SUPPORTED) if key in reg]
         return candidates[0] if len(candidates) == 1 else None
     return None
 
@@ -186,6 +211,23 @@ def source_hint(module_name, cycle=None):
         'expected_ra': len(counts), 'expected_ce': sum(counts),
         'status': 'original_state_source_requires_review',
     }
+
+
+def basic_services_annex(document_text):
+    """Aísla el anexo I del RD 127/2014, sin utilizar otros títulos del decreto."""
+    plain = _plain(document_text).replace('\xa0', ' ')
+    # El BOE de 2014 agrupa catorce títulos en el mismo documento.
+    title = re.search(
+        r'(?im)^[ \t]*ANEXO[ \t]+I[ \t]*\n\s*'
+        r'T[ií]tulo\s+Profesional\s+B[aá]sico\s+en\s+Servicios\s+Administrativos[ \t.]*$',
+        plain)
+    if not title:
+        raise ValueError('No se localiza el encabezado del anexo I de Servicios Administrativos.')
+    remaining = plain[title.end():]
+    following = re.search(r'(?im)^[ \t]*ANEXO[ \t]+II[ \t]*$', remaining)
+    if not following:
+        raise ValueError('No se localiza el límite del anexo I. No se consultarán otros títulos.')
+    return remaining[:following.start()]
 
 
 def parse_curriculum(document_text, module_name, expected_code=None):
@@ -264,7 +306,7 @@ def fetch_official(module_name, boe_id=None, consent=False, cycle=None):
         key = _module_key(module_name)
         requested = str(boe_id).strip().upper()
         # Una norma explícita resuelve la ambigüedad sin perder el cotejo del código.
-        candidates = [reg[key] for reg in (SUPPORTED, AF_SUPPORTED, AD_SUPPORTED)
+        candidates = [reg[key] for reg in (SUPPORTED, AF_SUPPORTED, AD_SUPPORTED, GB_SUPPORTED)
                       if key in reg and reg[key][0] == requested]
         if len(candidates) == 1:
             template = candidates[0]
@@ -284,12 +326,19 @@ def fetch_official(module_name, boe_id=None, consent=False, cycle=None):
     try:
         with urllib.request.urlopen(req,timeout=25) as r:
             charset=r.headers.get_content_charset() or 'utf-8'
-            raw=r.read(6_000_001)
-            if len(raw)>6_000_000:raise ValueError('La disposición supera el tamaño máximo permitido.')
+            # El RD 127/2014 reúne catorce títulos; admitir su HTML completo,
+            # de forma acotada, antes de aislar el anexo de Servicios Administrativos.
+            limit=24_000_000 if boe_id=='BOE-A-2014-2360' else 6_000_000
+            raw=r.read(limit+1)
+            if len(raw)>limit:raise ValueError('La disposición supera el tamaño máximo permitido.')
             document=raw.decode(charset,'replace')
     except (OSError,TimeoutError) as exc:
         raise ValueError('No se puede consultar el BOE. Revise la conexión y vuelva a intentarlo.') from exc
     expected=template[1] if template else None
+    if boe_id=='BOE-A-2014-2360':
+        if _module_key(module_name) not in GB_SUPPORTED:
+            raise ValueError('Solo se recuperan automáticamente los seis módulos profesionales del anexo I. Los ámbitos y módulos transversales requieren su propia normativa.')
+        document=basic_services_annex(document)
     parsed=parse_curriculum(document,module_name,expected)
     counts=EXPECTED_COVERAGE.get((boe_id, parsed['module_code']))
     if counts:

@@ -159,3 +159,16 @@ Se han añadido nueve módulos del anexo I original del [RD 1582/2011](https://w
 | 0661 | Protocolo empresarial | 6 | 57 |
 | 0662 | Organización de eventos empresariales | 5 | 46 |
 | 0663 | Gestión avanzada de la información | 5 | 40 |
+
+## Servicios Administrativos (Grado Básico)
+
+Se incorporan las seis referencias profesionales del anexo I del [RD 127/2014](https://www.boe.es/diario_boe/txt.php?id=BOE-A-2014-2360): 24 RA y 182 CE. El extractor aísla el anexo I para impedir la recuperación accidental de un módulo homónimo de otro título del mismo decreto. Se enlaza el Decreto canario 9/2023 y el RD 498/2024. Los ámbitos comunes requieren un modelo basado en competencias específicas y CE; no se recuperan como RA profesionales las materias antiguas suprimidas, tutoría ni las nuevas enseñanzas sin fuente contrastada. La fuente original sigue siendo una propuesta pendiente de validación docente.
+
+| Código | Módulo | RA | CE |
+|---|---|---:|---:|
+| 3001 | Tratamiento informático de datos | 4 | 34 |
+| 3002 | Aplicaciones básicas de ofimática | 4 | 26 |
+| 3003 | Técnicas administrativas básicas | 4 | 31 |
+| 3004 | Archivo y comunicación | 4 | 35 |
+| 3005 | Atención al cliente | 4 | 31 |
+| 3006 | Preparación de pedidos y venta de productos | 4 | 25 |
