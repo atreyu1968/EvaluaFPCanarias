@@ -769,10 +769,23 @@ class Handler(BaseHTTPRequestHandler):
             region=ag.ensure_territory(body.get('territory') or 'Canarias')
             cycle=ag.canonical_cycle(cycle)
             year=territories.year_code(year)
+            # La procedencia se valida de nuevo en el servidor y no confirma currículo.
+            import canarias_reference
+            ref_course=body.get('reference_course')
+            ref_code=body.get('reference_code','')
+            if ref_course in (None,''):
+                if ref_code not in (None,''):
+                    raise ValueError('La referencia modular requiere indicar el curso.')
+                module_reference=None
+            else:
+                module_reference=canarias_reference.resolve(
+                    cycle,year,name,ref_course,ref_code)
             if not year or not cycle or not name or len(cycle)>180 or len(name)>150:
                 raise ValueError('Curso, ciclo y módulo son obligatorios.')
             with data.connect() as d:
                 catalog_record=None
+                if module_reference and body.get('catalog_entry_id') not in (None,''):
+                    raise ValueError('No mezcle la referencia de 2024 y una ficha curricular local confirmada.')
                 if body.get('catalog_entry_id') not in (None,''):
                     import fp_catalog
                     catalog_record=fp_catalog.get_entry(d,body['catalog_entry_id'],region,year)
@@ -783,6 +796,8 @@ class Handler(BaseHTTPRequestHandler):
                 d.execute('INSERT INTO modules(academic_year,cycle,name,group_name,created_at,territory) VALUES(?,?,?,?,?,?)',
                           (year,cycle,name,str(body.get('group_name','')),data.now(),region))
                 mid=d.execute('SELECT last_insert_rowid()').fetchone()[0]
+                if module_reference:
+                    canarias_reference.store(d,mid,module_reference)
                 if catalog_record:
                     # Importa SOLO la identificación y procedencia de la ficha.
                     # El currículo, los RA/CE y las horas siguen SIN confirmar.
@@ -793,8 +808,15 @@ class Handler(BaseHTTPRequestHandler):
                                   'curriculum_source_description':catalog_record['source_title'],
                                   'curriculum_confirmed':False})
                     program_builder.save(d,mid,draft)
-                data.log(d,'module_created','module',mid,{'name':name,'catalog_entry_id':catalog_record['id'] if catalog_record else None})
-            return self.send({'id':mid,'catalog_used':bool(catalog_record)})
+                data.log(d,'module_created','module',mid, {
+                    'name':name,
+                    'catalog_entry_id':catalog_record['id'] if catalog_record else None,
+                    'historical_reference':bool(module_reference)
+                })
+            return self.send({
+                'id':mid,'catalog_used':bool(catalog_record),
+                'historical_reference_used':bool(module_reference)
+            })
         if path=='/api/curriculum/history/store':
             import curriculum_history
             mid=int(fields.get('module_id','0'))
