@@ -79,6 +79,14 @@ def store(db, module_id, record):
 
 
 def read(db, module_id):
+    # Algunas bases antiguas o pruebas con SQLite mínimo aún no han pasado
+    # por la migración completa; no debe impedirse leer su programación.
+    table = db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' "
+        "AND name='canarias_module_references'"
+    ).fetchone()
+    if table is None:
+        return None
     row = db.execute(
         'SELECT * FROM canarias_module_references WHERE module_id=?', (module_id,)
     ).fetchone()
