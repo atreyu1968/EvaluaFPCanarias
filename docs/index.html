@@ -17,7 +17,7 @@
 </head>
 <body>
   <a class="skip" href="#contenido">Saltar al contenido</a>
-  <div class="announcement"><span class="announcement-dot"></span> Proyecto educativo gratuito · EvalúaFP Canarias 1.2.10 beta.4 · Administración y Gestión</div>
+  <div class="announcement"><span class="announcement-dot"></span> Proyecto educativo gratuito · EvalúaFP Canarias · Candidato auditado 21/11/2026 · Administración y Gestión</div>
   <header class="site-header" id="inicio">
     <div class="wrap head-inner">
       <a class="wordmark" href="#inicio" aria-label="EvalúaFP, ir al inicio"><img src="assets/logo.svg" alt="" width="43" height="43"><span>Evalúa<span class="accent">FP</span><small>LOCAL</small></span></a>
@@ -86,31 +86,39 @@
 
     <section class="section features" id="descargas" aria-labelledby="descargas-title" style="background:#f3f7fb">
       <div class="wrap">
-        <div class="section-top"><div><p class="kicker">BETA.4 · COMPILACIONES VERIFICADAS</p><h2 id="descargas-title">Descargas portátiles<br><em>de EvalúaFP Canarias.</em></h2></div><p>Los cuatro paquetes se han generado en GitHub Actions y han superado las comprobaciones automatizadas correspondientes. Son versiones beta sin firma digital y todavía deben probarse visualmente en equipos reales.</p></div>
+        <div class="section-top"><div><p class="kicker">BETA.4 · CANDIDATO AUDITADO · 21/11/2026</p><h2 id="descargas-title">Descargas portátiles<br><em>de EvalúaFP Canarias.</em></h2></div><p>391 pruebas automatizadas superadas y cuatro compilaciones con autoprueba de arranque correcta. Candidatos sin firma digital, pendientes de validación visual en equipos reales. Código integrado en main.</p></div>
         <div class="feature-grid">
           <article class="feature-card">
             <div class="feature-symbol" aria-hidden="true">⊞</div>
             <h3>Windows 10/11 · x64</h3>
-            <p>Ejecutable portátil con datos SQLite separados y copia de seguridad configurable. No necesita instalar Python.</p>
-            <p style="margin-top:16px"><a class="btn btn-primary" href="https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44918796302" target="_blank" rel="noopener noreferrer">Ver ZIP de Windows ↗</a></p>
-            <span class="mini-pill">Compilación y autoprueba correctas</span>
+            <p>EXE portable dentro de ZIP. No necesita instalar Python. Requiere un entorno gráfico y WebView2 compatible.</p>
+            <p style="margin-top:16px"><a class="btn btn-primary" href="https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44955417151/artifacts/14727417758" target="_blank" rel="noopener noreferrer">Descargar para Windows ↗</a></p>
+            <span class="mini-pill">55,1 MB · Autoprueba correcta</span>
           </article>
           <article class="feature-card">
             <div class="feature-symbol" aria-hidden="true">⌘</div>
             <h3>Linux · x64</h3>
-            <p>Paquete portable para equipos con entorno gráfico compatible. Compilado en Ubuntu 22.04; comprueba las bibliotecas gráficas en tu distribución.</p>
-            <p style="margin-top:16px"><a class="btn btn-primary" href="https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44918800198" target="_blank" rel="noopener noreferrer">Ver paquete de Linux ↗</a></p>
-            <span class="mini-pill">Compilación y autoprueba correctas</span>
+            <p>Paquete TAR.GZ compilado en Ubuntu 22.04. Requiere un entorno gráfico y bibliotecas compatibles.</p>
+            <p style="margin-top:16px"><a class="btn btn-primary" href="https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44955417151/artifacts/14727154145" target="_blank" rel="noopener noreferrer">Descargar para Linux ↗</a></p>
+            <span class="mini-pill">276,8 MB · Autoprueba correcta</span>
           </article>
           <article class="feature-card">
             <div class="feature-symbol" aria-hidden="true">◈</div>
-            <h3>macOS · Intel y Apple Silicon</h3>
-            <p>Dos archivos distintos, según la arquitectura. La aplicación aún no dispone de firma de desarrollador ni notarización de Apple.</p>
-            <p style="margin-top:16px"><a class="btn btn-primary" href="https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44918800198" target="_blank" rel="noopener noreferrer">Ver los dos ZIP de macOS ↗</a></p>
-            <span class="mini-pill">Ambas arquitecturas verificadas en CI</span>
+            <h3>macOS · Intel</h3>
+            <p>Aplicación APP para equipos Mac con procesador Intel. Sin notarización de Apple.</p>
+            <p style="margin-top:16px"><a class="btn btn-primary" href="https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44955417151/artifacts/14727566138" target="_blank" rel="noopener noreferrer">Descargar para Mac Intel ↗</a></p>
+            <span class="mini-pill">54,3 MB · Autoprueba correcta</span>
+          </article>
+          <article class="feature-card">
+            <div class="feature-symbol" aria-hidden="true">◈</div>
+            <h3>macOS · Apple Silicon</h3>
+            <p>Aplicación APP para equipos Mac con chips de la serie M. Sin notarización de Apple.</p>
+            <p style="margin-top:16px"><a class="btn btn-primary" href="https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44955417151/artifacts/14727497151" target="_blank" rel="noopener noreferrer">Descargar para Mac ARM64 ↗</a></p>
+            <span class="mini-pill">52,3 MB · Autoprueba correcta</span>
           </article>
         </div>
-        <p style="font-size:13px;line-height:1.8;color:#526a7b;margin:27px 0 0">Para descargar: inicia sesión en GitHub, abre el enlace de tu sistema y localiza <strong>Artifacts</strong> al final de la ejecución; elige el paquete correspondiente. Los artefactos se conservan 30 días. No incluyen datos del alumnado. <a href="https://github.com/atreyu1968/EvaluaFPCanarias" target="_blank" rel="noopener noreferrer" style="color:#087e80;text-decoration:underline">Código fuente y documentación</a>.</p>
+        <p style="font-size:13px;line-height:1.8;color:#526a7b;margin:27px 0 0">Inicia sesión en GitHub para descargar. Extrae el ZIP de GitHub y después el package interior (ZIP o TAR.GZ). Comprueba el archivo SHA-256 incluido. Estos artefactos temporales están disponibles hasta el <strong>21 de diciembre de 2026</strong>. Prueba primero con datos ficticios y guarda una copia externa de tus datos actuales. <a href="https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44955417151" target="_blank" rel="noopener noreferrer" style="color:#087e80;text-decoration:underline">Resultados de la compilación</a> · <a href="https://github.com/atreyu1968/EvaluaFPCanarias" target="_blank" rel="noopener noreferrer" style="color:#087e80;text-decoration:underline">Código fuente y documentación</a>.</p>
+        <p style="font-size:12px;color:#526a7b">Identificador de compilación: e317fd88 · Conserva la versión interna 1.2.10-AG-CN-beta.4. Las versiones anteriores no se identifican con este candidato.</p>
       </div>
     </section>
 
