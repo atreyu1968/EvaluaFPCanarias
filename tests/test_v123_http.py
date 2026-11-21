@@ -51,7 +51,7 @@ class CatalogHTTPTests(unittest.TestCase):
                  'source_url':SOURCE,'source_title':'Norma consultada — ejemplo de validación del centro','teacher_confirmed':True}
         code,imported=self.query('api/national/catalog/import',payload)
         self.assertEqual((code,imported['added']),(200,2))
-        code,catalog=self.query('api/national/catalog?region=Comunidad%20de%20Madrid&academic_year=2026-2027&q=0650')
+        code,catalog=self.query('api/national/catalog?region=Canarias&academic_year=2026-2027&q=0650')
         self.assertEqual((code,catalog['count']),(200,1))
         entry=catalog['entries'][0]
         creation={'academic_year':'2026-2027','territory':'Canarias',
