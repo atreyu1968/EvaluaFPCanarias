@@ -17,11 +17,11 @@
 </head>
 <body>
   <a class="skip" href="#contenido">Saltar al contenido</a>
-  <div class="announcement"><span class="announcement-dot"></span> Proyecto educativo gratuito · Versión 1.0.6 · Para docentes de Formación Profesional</div>
+  <div class="announcement"><span class="announcement-dot"></span> Proyecto educativo gratuito · EvalúaFP Canarias 1.2.10 beta · Administración y Gestión</div>
   <header class="site-header" id="inicio">
     <div class="wrap head-inner">
       <a class="wordmark" href="#inicio" aria-label="EvalúaFP, ir al inicio"><img src="assets/logo.svg" alt="" width="43" height="43"><span>Evalúa<span class="accent">FP</span><small>LOCAL</small></span></a>
-      <nav class="main-nav" aria-label="Navegación principal"><a href="#funciones">Funciones</a><a href="#capturas">Capturas reales</a><a href="#ponderaciones">RA y CE</a><a href="#preguntas">Preguntas frecuentes</a></nav>
+      <nav class="main-nav" aria-label="Navegación principal"><a href="#funciones">Funciones</a><a href="#capturas">Capturas reales</a><a href="#ponderaciones">RA y CE</a><a href="#descargas">Descargas</a><a href="#preguntas">Preguntas frecuentes</a></nav>
       <a class="nav-cta" href="https://github.com/atreyu1968/EvaluaFPCanarias" target="_blank" rel="noopener noreferrer">Ver en GitHub <span aria-hidden="true">↗</span></a>
     </div>
   </header>
@@ -33,7 +33,7 @@
           <div class="eyebrow"><span class="line"></span> DISEÑADA PARA LA FORMACIÓN PROFESIONAL</div>
           <h1>Menos tiempo preparando.<br><em>Más criterio</em> al evaluar.</h1>
           <p class="hero-sub">De la programación didáctica al informe de calificación: genera exámenes, revisa las correcciones con IA y consolida las notas por resultados de aprendizaje y criterios de evaluación.</p>
-          <div class="hero-actions"><a class="btn btn-primary" href="https://github.com/atreyu1968/EvaluaFPCanarias/archive/refs/heads/main.zip" target="_blank" rel="noopener noreferrer">Descargar código gratis <span aria-hidden="true">↗</span></a><a class="btn btn-ghost" href="#capturas"><span class="play" aria-hidden="true">◉</span> Explorar la aplicación</a></div>
+          <div class="hero-actions"><a class="btn btn-primary" href="#descargas">Ver versiones portátiles <span aria-hidden="true">↗</span></a><a class="btn btn-ghost" href="#capturas"><span class="play" aria-hidden="true">◉</span> Explorar la aplicación</a></div>
           <p class="hero-note"><span class="check">✓</span> Datos almacenados en tu equipo <span class="sep">·</span> <span class="check">✓</span> Sin suscripción a la aplicación</p>
         </div>
         <div class="hero-media">
@@ -84,11 +84,41 @@
 
     <section class="section workflow"><div class="wrap"><div class="section-top"><div><p class="kicker">CÓMO FUNCIONA</p><h2>Del documento inicial<br><em>al informe final.</em></h2></div></div><div class="steps"><div><b>01</b><h3>Importa</h3><p>Programación y, si lo deseas, apuntes y materiales didácticos.</p></div><div><b>02</b><h3>Diseña</h3><p>Selecciona CE, dificultad, número de modelos y tipos de preguntas.</p></div><div><b>03</b><h3>Corrige</h3><p>Sube exámenes manuscritos y revisa cada propuesta de la IA.</p></div><div><b>04</b><h3>Evalúa</h3><p>Integra evidencias, valida la nota y exporta RA y CE.</p></div></div></div></section>
 
+    <section class="section features" id="descargas" aria-labelledby="descargas-title" style="background:#f3f7fb">
+      <div class="wrap">
+        <div class="section-top"><div><p class="kicker">PRIMERAS COMPILACIONES MULTIPLATAFORMA</p><h2 id="descargas-title">Descargas portátiles<br><em>de EvalúaFP Canarias.</em></h2></div><p>Los cuatro paquetes han superado la compilación y una prueba automática de arranque. Son versiones beta sin firma digital y todavía deben probarse visualmente en equipos reales.</p></div>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="feature-symbol" aria-hidden="true">⊞</div>
+            <h3>Windows 10/11 · x64</h3>
+            <p>Ejecutable portátil con datos SQLite separados y copia de seguridad configurable. No necesita instalar Python.</p>
+            <p style="margin-top:16px"><a class="btn btn-primary" href="https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44909845819" target="_blank" rel="noopener noreferrer">Ver ZIP de Windows ↗</a></p>
+            <span class="mini-pill">Compilación y autoprueba correctas</span>
+          </article>
+          <article class="feature-card">
+            <div class="feature-symbol" aria-hidden="true">⌘</div>
+            <h3>Linux · x64</h3>
+            <p>Paquete portable para equipos con entorno gráfico compatible. Compilado en Ubuntu 22.04; comprueba las bibliotecas gráficas en tu distribución.</p>
+            <p style="margin-top:16px"><a class="btn btn-primary" href="https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44909680492" target="_blank" rel="noopener noreferrer">Ver paquete de Linux ↗</a></p>
+            <span class="mini-pill">Compilación y autoprueba correctas</span>
+          </article>
+          <article class="feature-card">
+            <div class="feature-symbol" aria-hidden="true">◈</div>
+            <h3>macOS · Intel y Apple Silicon</h3>
+            <p>Dos archivos distintos, según la arquitectura. La aplicación aún no dispone de firma de desarrollador ni notarización de Apple.</p>
+            <p style="margin-top:16px"><a class="btn btn-primary" href="https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44909680492" target="_blank" rel="noopener noreferrer">Ver los dos ZIP de macOS ↗</a></p>
+            <span class="mini-pill">Ambas arquitecturas verificadas en CI</span>
+          </article>
+        </div>
+        <p style="font-size:13px;line-height:1.8;color:#526a7b;margin:27px 0 0">Para descargar: inicia sesión en GitHub, abre el enlace de tu sistema y localiza <strong>Artifacts</strong> al final de la ejecución; elige el paquete correspondiente. Los artefactos se conservan 30 días. No incluyen datos del alumnado. <a href="https://github.com/atreyu1968/EvaluaFPCanarias" target="_blank" rel="noopener noreferrer" style="color:#087e80;text-decoration:underline">Código fuente y documentación</a>.</p>
+      </div>
+    </section>
+
     <section class="section portability"><div class="wrap portability-inner"><div class="usb-art" aria-hidden="true"><div class="usb-outline"><span>eFP</span><i></i></div><div class="usb-shadow"></div></div><div><p class="kicker">TUS DATOS VIAJAN CONTIGO</p><h2>En tu ordenador.<br><em>O en tu pendrive.</em></h2><p>SQLite y los originales se guardan localmente. El modo USB permite elegir las carpetas de datos y de copias de seguridad, y protege la clave de la API con cifrado y contraseña maestra.</p><p class="quiet-note">Para transportar información real del alumnado se recomienda utilizar un dispositivo cifrado y conservar copias externas. La clave API protegida no implica que todos los documentos estén cifrados.</p></div></div></section>
 
-    <section class="section faq" id="preguntas"><div class="wrap faq-grid"><div><p class="kicker">ANTES DE EMPEZAR</p><h2>Preguntas<br><em>frecuentes.</em></h2></div><div class="faq-list"><details><summary>¿EvalúaFP es gratuita?</summary><p>El proyecto se ofrece gratuitamente. Las API externas de inteligencia artificial, como OpenAI o servicios compatibles, pueden tener costes independientes. El programa puede gestionar archivos y calificaciones locales sin utilizarlas.</p></details><details><summary>¿Puedo usarlo directamente como archivo EXE?</summary><p>El repositorio ofrece el código fuente y los scripts de compilación para Windows. Para obtener un EXE debe compilarse o descargarse una versión binaria verificada cuando se publique. No se garantiza un instalador ya compilado en el repositorio.</p></details><details><summary>¿La IA decide la calificación definitiva?</summary><p>No. La IA propone transcripciones, correspondencias curriculares y calificaciones. El docente revisa las evidencias y valida los resultados antes del cierre.</p></details><details><summary>¿Funciona con Additio?</summary><p>Genera archivos Excel y CSV/TSV de configuración curricular y calificaciones por RA/CE. El formato exacto de importación debe comprobarse con la configuración de Additio disponible en cada centro.</p></details><details><summary>¿Dónde se guardan los exámenes?</summary><p>Los PDF e imágenes originales se conservan en el almacenamiento local y sus metadatos en SQLite. El docente puede configurar carpetas y respaldos, incluso en USB.</p></details></div></div></section>
+    <section class="section faq" id="preguntas"><div class="wrap faq-grid"><div><p class="kicker">ANTES DE EMPEZAR</p><h2>Preguntas<br><em>frecuentes.</em></h2></div><div class="faq-list"><details><summary>¿EvalúaFP es gratuita?</summary><p>El proyecto se ofrece gratuitamente. Las API externas de inteligencia artificial, como OpenAI o servicios compatibles, pueden tener costes independientes. El programa puede gestionar archivos y calificaciones locales sin utilizarlas.</p></details><details><summary>¿Puedo usarlo directamente como archivo EXE?</summary><p>Ya hay paquetes portátiles de prueba para Windows x64, Linux x64 y macOS Intel/Apple Silicon en GitHub Actions. Abre la sección Descargas, inicia sesión en GitHub y baja el artefacto de tu sistema. Son betas aún sin firma y no equivalen a una instalación validada en todos los equipos.</p></details><details><summary>¿La IA decide la calificación definitiva?</summary><p>No. La IA propone transcripciones, correspondencias curriculares y calificaciones. El docente revisa las evidencias y valida los resultados antes del cierre.</p></details><details><summary>¿Funciona con Additio?</summary><p>Genera archivos Excel y CSV/TSV de configuración curricular y calificaciones por RA/CE. El formato exacto de importación debe comprobarse con la configuración de Additio disponible en cada centro.</p></details><details><summary>¿Dónde se guardan los exámenes?</summary><p>Los PDF e imágenes originales se conservan en el almacenamiento local y sus metadatos en SQLite. El docente puede configurar carpetas y respaldos, incluso en USB.</p></details></div></div></section>
 
-    <section class="final-cta"><div class="wrap cta-content"><p class="kicker">PARA QUIEN ENSEÑA, CORRIGE Y EVALÚA</p><h2>Tu criterio docente,<br><em>mejor acompañado.</em></h2><p>Explora EvalúaFP Canarias · Administración y Gestión, consulta la documentación y participa en el desarrollo de una herramienta pensada para la realidad de la Formación Profesional.</p><div class="hero-actions"><a class="btn btn-primary" href="https://github.com/atreyu1968/EvaluaFPCanarias/archive/refs/heads/main.zip" target="_blank" rel="noopener noreferrer">Descargar código gratuito <span aria-hidden="true">↗</span></a><a class="btn btn-ghost" href="https://github.com/atreyu1968/EvaluaFPCanarias#inicio-en-windows-desde-el-c%C3%B3digo-fuente" target="_blank" rel="noopener noreferrer">Consultar instalación</a></div></div></section>
+    <section class="final-cta"><div class="wrap cta-content"><p class="kicker">PARA QUIEN ENSEÑA, CORRIGE Y EVALÚA</p><h2>Tu criterio docente,<br><em>mejor acompañado.</em></h2><p>Explora EvalúaFP Canarias · Administración y Gestión, consulta la documentación y participa en el desarrollo de una herramienta pensada para la realidad de la Formación Profesional.</p><div class="hero-actions"><a class="btn btn-primary" href="#descargas">Consultar descargas portátiles <span aria-hidden="true">↗</span></a><a class="btn btn-ghost" href="https://github.com/atreyu1968/EvaluaFPCanarias#inicio-en-windows-desde-el-c%C3%B3digo-fuente" target="_blank" rel="noopener noreferrer">Consultar instalación</a></div></div></section>
   </main>
   <footer class="footer"><div class="wrap footer-inner"><div class="wordmark"><img src="assets/logo.svg" alt="" width="36" height="36"><span>Evalúa<span class="accent">FP</span><small>LOCAL</small></span></div><p>Desarrollo: <strong>Francisco Javier González Rolo</strong> · Proyecto educativo gratuito · 2026</p><a href="https://github.com/atreyu1968/EvaluaFPCanarias" rel="noopener noreferrer" target="_blank">Repositorio GitHub ↗</a></div><div class="wrap legal">Proyecto en desarrollo. Las capturas muestran la interfaz real con datos ficticios. No sustituye la validación docente ni el cumplimiento de las obligaciones sobre datos personales.</div></footer>
   <dialog id="lightbox" class="lightbox" aria-label="Captura ampliada"><form method="dialog"><button class="lightbox-close" aria-label="Cerrar captura">✕</button></form><img id="lightbox-image" src="assets/screenshots/programaciones.webp" alt="Captura ampliada de EvalúaFP"><p id="lightbox-caption"></p></dialog>
