@@ -192,7 +192,9 @@ async function loadAGModuleSuggestions(form){
    list.innerHTML=modules.map(m=>'<option value="'+E(m.name)+
       '" label="'+E((m.code||'Sin código RD')+' · '+m.course+'º · '+m.reference_annual_hours+' h (referencia de 2024)')+'"></option>').join('');
    pick.innerHTML='<option value="">Seleccione un módulo o escríbalo manualmente</option>'+
-      modules.map(m=>'<option value="'+E(m.name)+'">'+E((m.code||'Sin código RD')+' · '+m.name+' · '+m.course+'º')+'</option>').join('');
+      modules.map(m=>'<option value="'+E(m.name)+'" data-reference-code="'+E(m.code||'')+
+          '" data-reference-course="'+Number(m.course)+'">'+
+          E((m.code||'Sin código RD')+' · '+m.name+' · '+m.course+'º')+'</option>').join('');
    const regulation=data.state_title_regulation||{};
    if(source&&/^https:\/\/www\.boe\.es\/eli\/es\/rd\//.test(regulation.url||'')){
      source.innerHTML='<a href="'+E(regulation.url)+'" target="_blank" rel="noopener noreferrer">Consultar norma estatal del título</a> · '+
@@ -205,6 +207,18 @@ async function loadAGModuleSuggestions(form){
  }catch(err){
    if(form.isConnected)note.textContent='No se ha podido consultar el índice. Escriba la denominación del módulo manualmente.';
  }
+}
+function agReferencePanel(ref){
+ if(!ref)return '';
+ return `<section class="panel" aria-label="Procedencia documental del módulo">
+ <h3>Referencia documental conservada (pendiente de revisión)</h3>
+ <p><strong>${E(ref.course)}.º · ${E(ref.module_code||'Sin código RD')} · ${E(ref.module_name)}</strong></p>
+ <p>Distribución orientativa de ${E(ref.reference_academic_year)}: ${E(ref.reference_annual_hours)} horas anuales y ${E(ref.reference_weekly_hours)} horas semanales. <b>No son horas confirmadas del curso actual.</b></p>
+ <p class="small"><a href="${E(ref.source_url)}" target="_blank" rel="noopener noreferrer">Consultar anexo de origen</a>
+ (${E(ref.source_title)}, p. ${E(ref.source_page)}).
+ <a href="${E(ref.state_title_url)}" target="_blank" rel="noopener noreferrer">Consultar norma estatal del título</a>.</p>
+ <p class="hint warning">El índice de 2024 no verifica su vigencia actual. No se han incorporado ni confirmado resultados de aprendizaje, criterios de evaluación, ponderaciones u horas lectivas a partir de esta referencia.</p>
+ </section>`;
 }
 function resolveAGCycle(text){
  const norm=String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -966,6 +980,7 @@ async function viewPrepare(){
  <div class="field"><label for="ag-module-pick">Elegir módulo de la lista de referencia</label><select id="ag-module-pick"><option value="">Seleccione primero un ciclo</option></select></div>
  <div class="field"><label>Nombre del módulo (editable)</label><input name="name" required list="ag-module-list" placeholder="Selecciona del listado o escribe el nombre"><datalist id="ag-module-list"></datalist><p class="small" id="ag-module-note">Elige un ciclo para consultar módulos de referencia.</p><p class="small" id="ag-module-source"></p></div>
  <div class="field"><label>Grupo (opcional)</label><input name="group_name" placeholder="1.º A"></div>
+ <input type="hidden" name="reference_course"><input type="hidden" name="reference_code">
  <input type="hidden" name="catalog_entry_id"><p class="small" data-catalog-selection></p>
  <button class="btn" type="submit">Crear módulo y continuar</button></form></section>${catalogPanel()}`;return;}
  const info=await API('/api/programming-builder/'+Number(S.moduleId));S.prepareInfo=info;
@@ -985,7 +1000,7 @@ async function viewPrepare(){
  const moduleSelector=`<section class="guide-context"><div class="field"><label>Módulo que estás preparando</label>
  <select id="prepare-module">${opt(S.modules,S.moduleId,m=>m.name+' · '+m.academic_year)}</select></div>
  <button type="button" class="btn secondary" data-action="prepare-new-module">+ Nuevo módulo</button>
- <span class="badge">${info.counts.ra} RA · ${info.counts.ce} CE</span></section>`;
+ <span class="badge">${info.counts.ra} RA · ${info.counts.ce} CE</span></section>${agReferencePanel(info.module_reference)}`;
  if(!S.preparePath){
  const choices=[
  ['import','file-up','Ya tengo una programación','Recuperar todo lo aprovechable: normativa, metodología, evaluación, unidades, recursos, actividades, horas y currículo.'],
@@ -1147,6 +1162,7 @@ async function viewPrograms(){
  <div class="field"><label for="ag-module-pick">Elegir módulo de la lista de referencia</label><select id="ag-module-pick"><option value="">Seleccione primero un ciclo</option></select></div>
  <div class="field"><label>Módulo profesional (editable)</label><input required name="name" list="ag-module-list" placeholder="Selecciona del listado o escribe el nombre"><datalist id="ag-module-list"></datalist><p class="small" id="ag-module-note">Elige un ciclo para consultar módulos de referencia.</p><p class="small" id="ag-module-source"></p></div>
  <div class="field"><label>Grupo</label><input name="group_name" placeholder="1.º A"></div>
+ <input type="hidden" name="reference_course"><input type="hidden" name="reference_code">
  <input type="hidden" name="catalog_entry_id"><p class="small" data-catalog-selection></p>
  <button class="btn" type="submit">Crear módulo</button></form></div>
  ${catalogPanel()}
@@ -1681,6 +1697,9 @@ document.addEventListener('change',async event=>{
    if(form){
       form.elements.name.value=el.value||'';
       form.dataset.agPickedName=el.value||'';
+      const ref=el.selectedOptions?.[0];
+      form.elements.reference_course.value=ref?.dataset.referenceCourse||'';
+      form.elements.reference_code.value=ref?.dataset.referenceCode||'';
       if(form.elements.catalog_entry_id?.value){form.elements.catalog_entry_id.value='';S.catalogPicked=null;}
       const note=form.querySelector('[data-catalog-selection]');
       if(note)note.textContent='La lista orientativa no confirma el currículo ni sus horas.';
@@ -1693,9 +1712,13 @@ document.addEventListener('change',async event=>{
    if(el.name==='cycle'||el.name==='academic_year'||el.id==='ag-course-filter'){
       if(form.dataset.agPickedName&&form.elements.name.value===form.dataset.agPickedName)form.elements.name.value='';
       form.dataset.agPickedName='';
+      form.elements.reference_course.value='';
+      form.elements.reference_code.value='';
    }else if(el.name==='name'&&el.value!==form.dataset.agPickedName){
       const pick=form.querySelector('#ag-module-pick');if(pick)pick.value='';
       form.dataset.agPickedName='';
+      form.elements.reference_course.value='';
+      form.elements.reference_code.value='';
    }
    if(form?.elements.catalog_entry_id?.value){
       form.elements.catalog_entry_id.value='';S.catalogPicked=null;
