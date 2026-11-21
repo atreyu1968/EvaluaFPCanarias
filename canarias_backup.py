@@ -50,6 +50,10 @@ def check_database(path):
 
 def make(data_dir,backup_dir,db_file,storage,secret=None):
     data_dir,backup_dir,db_file,storage=map(Path,(data_dir,backup_dir,db_file,storage))
+    if not db_file.is_file() or not storage.is_dir():
+        raise ValueError('Falta la base de datos o el almacén de originales.')
+    if not safe_file(db_file,data_dir) or storage.is_symlink() or not storage.resolve().is_relative_to(data_dir.resolve()):
+        raise ValueError('La base o el almacén no pertenecen a la carpeta de datos.')
     backup_dir.mkdir(parents=True,exist_ok=True)
     name='copia_evaluafp_'+datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+uuid.uuid4().hex[:8]+'.zip'
     final=backup_dir/name
@@ -131,7 +135,7 @@ def verify(path,extract_to=None):
             raise ValueError('Falta un manifiesto de integridad compatible.')
         manifest=json.loads(z.read(MANIFEST))
         files=manifest.get('files') if isinstance(manifest,dict) else None
-        if manifest.get('format')!=FORMAT or not isinstance(files,dict) or DB_MEMBER not in files:
+        if not isinstance(manifest,dict) or manifest.get('format')!=FORMAT or not isinstance(files,dict) or DB_MEMBER not in files:
             raise ValueError('Formato de copia incompatible.')
         if set(files)!=(set(z.namelist())-{MANIFEST}):
             raise ValueError('El manifiesto no coincide con el contenido.')
@@ -186,7 +190,7 @@ def rebase(dbpath,root):
 
 
 def restore(path,destination):
-    """Recupera a carpeta nueva o vacía; nunca modifica la instalación activa."""
+    """Recupera a una carpeta nueva; nunca modifica la instalación activa."""
     destination=Path(destination).resolve()
     if destination.exists():
         raise ValueError('La recuperación requiere una carpeta nueva, no existente.')
