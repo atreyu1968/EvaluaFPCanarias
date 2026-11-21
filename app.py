@@ -475,6 +475,22 @@ class Handler(BaseHTTPRequestHandler):
                         stats[table]=d.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]
                     return self.send(stats)
                 if path=='/api/modules':return self.send(data.dicts(d.execute('SELECT * FROM modules ORDER BY id DESC')))
+                if path=='/api/common-scopes/recovery':
+                    import common_scope_recovery as recovery
+                    mid=int((args.get('module_id') or ['0'])[0])
+                    return self.send(recovery.load(d,mid))
+                if path=='/api/common-scopes/recovery-origins':
+                    import common_scope_recovery as recovery
+                    mid=int((args.get('module_id') or ['0'])[0])
+                    sid=int((args.get('student_id') or ['0'])[0])
+                    return self.send({'origins':recovery.origins(d,mid,sid)})
+                if path=='/api/common-scopes/export.xlsx':
+                    import common_scope_export as scope_export
+                    mid=int((args.get('module_id') or ['0'])[0])
+                    session=(args.get('session') or ['ordinaria'])[0]
+                    raw_sid=(args.get('student_id') or [''])[0]
+                    blob,mime,filename=scope_export.export(d,mid,session,int(raw_sid) if raw_sid else None)
+                    return self.send_bytes(blob,mime,filename)
                 if path=='/api/common-scopes/consolidation':
                     import common_scope_consolidation as consolidation
                     mid=int((args.get('module_id') or ['0'])[0])
@@ -1116,6 +1132,15 @@ class Handler(BaseHTTPRequestHandler):
                 d.execute('UPDATE materials SET active=? WHERE id=?',(int(active),pid))
                 data.log(d,'material_status_changed','material',pid,{'active':active})
             return self.send({'ok':True,'active':active})
+        if path in ('/api/common-scopes/recovery-create','/api/common-scopes/recovery-review'):
+            import common_scope_recovery as recovery
+            mid=int(body['module_id'])
+            with data.connect() as d:
+                if path.endswith('/recovery-create'):
+                    ident=recovery.create(d,mid,body.get('plan'))
+                else:
+                    ident=recovery.review(d,mid,body.get('review'))
+            return self.send({'id':ident})
         if path in ('/api/common-scopes/matter-grade','/api/common-scopes/team-decision'):
             import common_scope_consolidation as consolidation
             mid=int(body['module_id'])
