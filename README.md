@@ -20,6 +20,8 @@ La relación de títulos se ha comprobado en el catálogo de la [Consejería de 
 
 Los Grados A, B y C de la familia **no son equivalentes automáticamente a los Grados D**. Su integración en el selector se abordará de forma separada, comenzando por las ofertas de nivel 1 recogidas en la [Resolución canaria de 29 de octubre de 2026](https://www.gobiernodecanarias.org/boc/2026/227/3917.html).
 
+Se ha documentado el **primer grupo de cuatro certificados de Grado C (nivel 1)** del Anexo I del BOC 2026/227, con sus códigos ADG_C_001_3B a ADG_C_004_3B, y se mantiene expresamente separado del selector de cuatro títulos de Grado D. [Ver alcance y normativa de los Grados B/C](docs/CERTIFICADOS_B_C_NIVEL_1_CANARIAS.md).
+
 ## Adaptaciones realizadas
 
 1. Interfaz identificada como «EvalúaFP Canarias · Administración y Gestión».
