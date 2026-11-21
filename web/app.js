@@ -2070,6 +2070,13 @@ document.addEventListener('click',async event=>{
    const form=catalogCreationForm();
    form.elements.cycle.value=resolveAGCycle(entry.title_name);
    form.elements.name.value=entry.module_name;
+   // Una ficha curricular del centro y una referencia histórica son orígenes
+   // distintos; nunca deben adjuntarse a la misma creación por accidente.
+   form.elements.reference_course.value='';
+   form.elements.reference_code.value='';
+   form.dataset.agPickedName='';
+   const agPick=form.querySelector('#ag-module-pick');
+   if(agPick)agPick.value='';
    form.elements.catalog_entry_id.value=entry.id;
    S.catalogPicked=entry;
    const note=form.querySelector('[data-catalog-selection]');
