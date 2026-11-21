@@ -1,0 +1,76 @@
+name: Promover beta.5 ya verificada
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/promote-beta5.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: beta5-release-refs/heads/main
+  cancel-in-progress: false
+jobs:
+  promote:
+    if: github.repository == 'atreyu1968/EvaluaFPCanarias' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN: '44957136836'
+      SOURCE_SHA: adef95a039f2686549d42df98219d3dcbcfaeabf
+      RELEASE_SHA: 67c8148084967c993022e4eff233adb04b7f2a30
+      TAG: v1.2.10-AG-CN-beta.5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verificar procedencia y estado
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$RELEASE_SHA" "$GITHUB_SHA"
+          test "$(git rev-parse "$SOURCE_SHA^{tree}")" = "$(git rev-parse "$RELEASE_SHA^{tree}")"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN" > /tmp/beta5-run.json
+          jq -e --arg sha "$SOURCE_SHA" '.head_sha == $sha and .workflow_id == 426343918 and .status == "completed" and .conclusion == "success"' /tmp/beta5-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN/jobs?per_page=100" > /tmp/beta5-jobs.json
+          jq -e '[.jobs[] | select(.name == "tests" or .name == "manuals" or .name == "windows" or (.name | startswith("unix (")))] | length == 6 and all(.[]; .conclusion == "success")' /tmp/beta5-jobs.json
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: 44957136836
+          pattern: beta5-*
+          merge-multiple: true
+          path: release-assets
+      - name: Verificar paquetes y manuales
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release-assets
+          for platform in windows_x64 linux_x64 macos_x64 macos_arm64; do
+            ext=zip
+            if [ "$platform" = linux_x64 ]; then ext=tar.gz; fi
+            name="EvaluaFPCanarias_Portatil_1.2.10-AG-CN-beta.5_${platform}.${ext}"
+            test -s "$name"
+            test -s "$name.sha256"
+            sha256sum --check "$name.sha256"
+          done
+          for manual in WINDOWS LINUX MACOS DIDACTICO_CANARIAS; do
+            test -s "EvaluaFPCanarias_beta5_$manual.pdf"
+          done
+          test "$(find . -maxdepth 1 -name '*.sha256' | wc -l)" -eq 4
+          test "$(find . -maxdepth 1 -name '*.pdf' | wc -l)" -eq 4
+      - name: Publicación preliminar sin sobrescritura
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "La etiqueta ya tiene una publicación; no se sobrescribe."
+            exit 1
+          fi
+          gh release create "$TAG" --target "$RELEASE_SHA" --draft --prerelease --title "EvalúaFP Canarias 1.2.10 AG-CN beta.5" --notes-file docs/BETA5_RELEASE.md
+          gh release upload "$TAG" release-assets/*.zip release-assets/*.tar.gz release-assets/*.sha256 release-assets/*.pdf docs/manuales/*.md
+          gh release edit "$TAG" --draft=false --prerelease
+          gh release view "$TAG" --json url,isDraft,isPrerelease,assets
