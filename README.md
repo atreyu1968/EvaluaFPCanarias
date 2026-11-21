@@ -263,3 +263,17 @@ Desde Inicio > Formación en empresa se registran empresas y centros de trabajo,
 Se registra asistencia efectiva diaria y ausencias con historial; los cambios del mismo día no suman dos veces. El informe de empresa se transcribe por RA como superado/no superado, con observaciones y referencia documental. El docente registra su revisión; una nueva valoración exige una nueva revisión. En el cuaderno profesional > Evidencias cualitativas FEOE del módulo se consultan las valoraciones de planes confirmados, sin convertirlas en notas, y se advierte si el currículo ha cambiado.
 
 Fuentes de seguimiento: [Resolución de 2024, BOC 230, anuncio 3794](https://www.gobiernodecanarias.org/boc/2024/230/3794.html) y [Resolución de 9 de junio de 2025, BOC 118, anuncio 2219](https://www.gobiernodecanarias.org/boc/2025/118/2219.html). Las referencias y las valoraciones son aportadas por el docente. El modelo local todavía necesita gestión de un único plan por alumno con varias estancias, revisiones formales del plan, informes descargables y comprobación integrada de requisitos. No calcula porcentajes de estancia, no firma anexos oficiales, no envía datos a empresas y no altera calificaciones existentes. Las pruebas sintéticas se han añadido, pero requieren ejecución verificable e integración.
+
+### Auditoría: copias verificadas y recuperación aislada
+
+En Ajustes, el botón de copia ZIP utiliza una instantánea SQLite mediante backup API, un directorio temporal exclusivo, nombres únicos y un manifiesto SHA-256 que cubre cada miembro. Se comprueba el archivo antes de publicarlo; las rutas externas y enlaces del almacén se rechazan. Realice la copia sin modificar registros ni cargar documentos: la instantánea de SQLite es consistente, pero el sistema de archivos no comparte una transacción con la base de datos. El ZIP contiene datos personales sin cifrar (solo la clave API portátil se añade cifrada). SHA-256 permite detectar alteraciones accidentales; el manifiesto no está firmado y no autentica el origen de una copia.
+
+Desde el código fuente, con Python 3.13:
+- Verificar: `python canarias_backup.py "ruta/copia.zip"`.
+- Recuperar: `python canarias_backup.py "ruta/copia.zip" --restore-to "ruta/carpeta_nueva"`.
+
+La recuperación verifica rutas, duplicados, tamaños y hashes; comprueba SQLite y reubica las referencias del almacén. Solo admite una carpeta nueva y no activa ni sobrescribe la base en uso. Conserve la original, cierre la aplicación y compruebe la carpeta recuperada antes de arrancar con EVALUAFP_CANARIAS_DATA_DIR apuntando a ella en modo no portátil. En el modo portable, prepare una carpeta de datos según las reglas de almacenamiento del dispositivo y reinicie. Las copias anteriores sin manifiesto requieren otro procedimiento; no se eliminan. Esta utilidad todavía no se ofrece en la interfaz gráfica ni como ejecutable autónomo.
+
+Los cierres de evaluación incluyen las valoraciones FEOE de planes confirmados, la versión de currículo y la revisión docente en su huella. Si cambia la evidencia, el cierre queda desactualizado. Una valoración pendiente de revisión o de cotejo curricular bloquea una nueva nota final; no se traduce una valoración cualitativa en números. Los cierres previos permanecen en el historial.
+
+Se añaden pruebas sintéticas de restauración, detección de rutas maliciosas, alteración de archivos y revisión de cierres. La validación definitiva depende de los resultados de CI y las comprobaciones funcionales.
