@@ -127,6 +127,23 @@ class CanariasModuleReferenceHTTPTests(unittest.TestCase):
         _, info = self.send(f"api/programming-builder/{created['id']}")
         self.assertIsNone(info['module_reference'])
 
+    def test_canarias_programming_cannot_be_reassigned_to_another_territory(self):
+        status, created = self.send('api/modules', self.payload())
+        self.assertEqual(status, 200, created)
+        module_id = created['id']
+        _, info = self.send(f'api/programming-builder/{module_id}')
+        draft = info['draft']
+        draft['region'] = 'Comunidad de Madrid'
+        status, body = self.send('api/programming-builder/save',
+                                 {'module_id': module_id, 'draft': draft})
+        self.assertEqual(status, 400, body)
+        self.assertIn('Canarias', body['error'])
+        with database.connect() as db:
+            territory = db.execute(
+                'SELECT territory FROM modules WHERE id=?', (module_id,)
+            ).fetchone()[0]
+        self.assertEqual(territory, 'Canarias')
+
     def test_mismatches_and_tampering_rejected(self):
         scenarios = (
             {'reference_course': '3'},
