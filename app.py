@@ -464,6 +464,9 @@ class Handler(BaseHTTPRequestHandler):
         self.ensure_auth()
         if self.command=='GET':
             with data.connect() as d:
+                if path=='/api/backup/list':
+                    import canarias_backup
+                    return self.send({'archives':canarias_backup.list_archives(data.BACKUPS)})
                 if path=='/api/health':return self.send({'ok':True,'database':str(data.DB_FILE),'storage':str(data.STORAGE)})
                 if path=='/api/dashboard':
                     stats={}
@@ -691,7 +694,11 @@ class Handler(BaseHTTPRequestHandler):
                 if m:return self.send(exam_detail(d,int(m[1])))
                 m=re.fullmatch(r'/api/submissions/(\d+)',path)
                 if m:return self.send(sub_detail(d,int(m[1])))
-                if path=='/api/settings':
+                if path=='/api/backup/recover':
+            import canarias_backup
+            return self.send(canarias_backup.recover_archive(data.BACKUPS,data.DATA,
+                body.get('name'),body.get('confirmed')))
+        if path=='/api/settings':
                     return self.send({**ia.settings(),**ia.secret_status(), 'api_key_configured':ia.key_available(),
                                       **storage_config.get_info()})
                 m=re.fullmatch(r'/api/pages/(\d+)/image',path)
