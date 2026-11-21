@@ -9,6 +9,7 @@ on:
 
 # Reconstrucción de beta.4 con las pruebas de procedencia, horas y
 # protección territorial incluidas. Las compilaciones anteriores quedan obsoletas.
+# Reconstrucción corregida: compatibilidad con SQLite anterior a la migración.
 permissions:
   contents: read
 
