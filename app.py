@@ -475,6 +475,11 @@ class Handler(BaseHTTPRequestHandler):
                         stats[table]=d.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]
                     return self.send(stats)
                 if path=='/api/modules':return self.send(data.dicts(d.execute('SELECT * FROM modules ORDER BY id DESC')))
+                if path=='/api/common-scopes/consolidation':
+                    import common_scope_consolidation as consolidation
+                    mid=int((args.get('module_id') or ['0'])[0])
+                    session=(args.get('session') or ['ordinaria'])[0]
+                    return self.send(consolidation.report(d,mid,session))
                 if path=='/api/common-scopes/notebook':
                     import common_scope_notebook
                     mid=int((args.get('module_id') or ['0'])[0])
@@ -1111,6 +1116,15 @@ class Handler(BaseHTTPRequestHandler):
                 d.execute('UPDATE materials SET active=? WHERE id=?',(int(active),pid))
                 data.log(d,'material_status_changed','material',pid,{'active':active})
             return self.send({'ok':True,'active':active})
+        if path in ('/api/common-scopes/matter-grade','/api/common-scopes/team-decision'):
+            import common_scope_consolidation as consolidation
+            mid=int(body['module_id'])
+            with data.connect() as d:
+                if path.endswith('/matter-grade'):
+                    ident=consolidation.record_grade(d,mid,body.get('valuation'))
+                else:
+                    ident=consolidation.record_decision(d,mid,body.get('decision'))
+            return self.send({'id':ident})
         if path in ('/api/common-scopes/activity','/api/common-scopes/evidence'):
             import common_scope_notebook
             mid=int(body['module_id'])
