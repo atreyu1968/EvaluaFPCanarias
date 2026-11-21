@@ -43,8 +43,16 @@ jobs:
           Copy-Item -LiteralPath 'README.md' -Destination "$base/LEEME_CANARIAS.md"
           $env:EVALUAFP_CANARIAS_PORTABLE_HOME=(Resolve-Path $base).Path
           $env:EVALUAFP_CANARIAS_PORTABLE='1'
-          & "$base/EvaluaFPCanarias.exe" --selftest
-          if ($LASTEXITCODE -ne 0) { throw "El EXE portátil no supera la prueba de arranque" }
+          # --windowed es un ejecutable GUI: PowerShell no espera necesariamente
+          # al terminar con el operador &, por lo que $LASTEXITCODE puede quedar obsoleto.
+          $exe=(Resolve-Path "$base/EvaluaFPCanarias.exe").Path
+          $test=Start-Process -FilePath $exe -ArgumentList '--selftest' -PassThru -Wait
+          if ($test.ExitCode -ne 0) { throw "El EXE portátil no supera la prueba de arranque: $($test.ExitCode)" }
+          $sqlite="$base/EvaluaFPCanarias_Datos/datos/evaluafp.sqlite3"
+          if (-not (Test-Path $sqlite)) { throw "El modo portátil no ha creado su base SQLite aislada" }
+          # El artefacto distribuible se entrega limpio, sin SQLite ni logs de la CI.
+          Remove-Item -LiteralPath "$base/EvaluaFPCanarias_Datos" -Recurse -Force
+          New-Item -ItemType Directory -Force -Path "$base/EvaluaFPCanarias_Datos" | Out-Null
           Compress-Archive -Path "$base/*" -DestinationPath 'dist/EvaluaFPCanarias_Portatil_windows_x64.zip' -Force
           if (-not (Test-Path 'dist/EvaluaFPCanarias_Portatil_windows_x64.zip')) { throw "Falta el paquete ZIP" }
       - name: Publicar portable Windows (sin datos personales)
