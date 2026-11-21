@@ -82,7 +82,7 @@ Fuentes normativas de referencia:
 
 Se incorpora un flujo de GitHub Actions para compilar **Windows x64** y se mantiene el flujo para **Linux x64, macOS Intel y Apple Silicon**, con pruebas y comprobación de arranque de los binarios. Los archivos resultantes son artefactos temporales de Actions, **sin firma de código ni notarización**; la generación automática no sustituye una apertura real y una prueba funcional en cada sistema. Los ZIP/TAR.GZ no incorporan información personal.
 
-**Artefactos de prueba de la beta.4 (retención de 30 días, requiere inicio de sesión en GitHub):** [Windows x64](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44918796302) · [Linux x64 y macOS Intel/Apple Silicon](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44918800198). La [landing de la edición canaria](docs/index.html#descargas) permite encontrar cada plataforma. Las compilaciones han superado sus autopruebas, pero falta validación visual en sistemas reales.
+**Candidato auditado de 21/11/2026 (versión interna 1.2.10-AG-CN-beta.4, commit e317fd88):** [Windows x64](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44955417151/artifacts/14727417758) · [Linux x64](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44955417151/artifacts/14727154145) · [macOS Intel](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44955417151/artifacts/14727566138) · [macOS Apple Silicon](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44955417151/artifacts/14727497151). Requiere sesión en GitHub. Conservación hasta el 21/12/2026. Las cuatro autopruebas de arranque y 391 pruebas automatizadas han superado los controles; falta validación visual real. Véase [la compilación completa](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44955417151) y la [landing](docs/index.html#descargas).
 
 ## Instalación y pruebas
 
@@ -97,7 +97,7 @@ En Windows pueden utilizarse `INICIAR_EVALUAFP.bat` y `CREAR_VERSION_PENDRIVE.ba
 python -m unittest discover -s tests -v
 ```
 
-GitHub Actions ha superado **307 pruebas** y ha generado los cuatro paquetes portátiles de la **beta.4**: [Windows x64](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44918796302) y [Linux x64, macOS Intel y macOS Apple Silicon](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44918800198). Los archivos se encuentran en la sección *Artifacts* (requiere acceso a GitHub), con conservación temporal de 30 días. Las pruebas de compilación y arranque automatizado no sustituyen la apertura y revisión visual real en cada sistema operativo; los portátiles no están firmados digitalmente.
+La compilación auditada del 21/11/2026 ha superado **391 pruebas automatizadas**, sintaxis Python y JavaScript, y cuatro autopruebas nativas de arranque. Candidatos: [Windows x64](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44955417151/artifacts/14727417758) · [Linux x64](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44955417151/artifacts/14727154145) · [macOS Intel](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44955417151/artifacts/14727566138) · [macOS Apple Silicon](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44955417151/artifacts/14727497151). Los artefactos incluyen huellas SHA-256 y caducan el 21/12/2026. No constituyen versiones definitivas firmadas, notarizadas ni probadas visualmente en equipos reales.
 
 ## Documentación
 
@@ -272,7 +272,7 @@ Desde el código fuente, con Python 3.13:
 - Verificar: `python canarias_backup.py "ruta/copia.zip"`.
 - Recuperar: `python canarias_backup.py "ruta/copia.zip" --restore-to "ruta/carpeta_nueva"`.
 
-La recuperación verifica rutas, duplicados, tamaños y hashes; comprueba SQLite y reubica las referencias del almacén. Solo admite una carpeta nueva y no activa ni sobrescribe la base en uso. Conserve la original, cierre la aplicación y compruebe la carpeta recuperada antes de arrancar con EVALUAFP_CANARIAS_DATA_DIR apuntando a ella en modo no portátil. En el modo portable, prepare una carpeta de datos según las reglas de almacenamiento del dispositivo y reinicie. Las copias anteriores sin manifiesto requieren otro procedimiento; no se eliminan. Esta utilidad todavía no se ofrece en la interfaz gráfica ni como ejecutable autónomo.
+La recuperación verifica rutas, duplicados, tamaños y hashes; comprueba SQLite y reubica las referencias del almacén. Solo admite una carpeta nueva y no activa ni sobrescribe la base en uso. Conserve la original, cierre la aplicación y compruebe la carpeta recuperada antes de arrancar con EVALUAFP_CANARIAS_DATA_DIR apuntando a ella en modo no portátil. En el modo portable, prepare una carpeta de datos según las reglas de almacenamiento del dispositivo y reinicie. Las copias anteriores sin manifiesto requieren otro procedimiento; no se eliminan. La recuperación aislada también se ofrece desde Ajustes para las copias locales compatibles; la activación permanece separada.
 
 Los cierres de evaluación incluyen las valoraciones FEOE de planes confirmados, la versión de currículo y la revisión docente en su huella. Si cambia la evidencia, el cierre queda desactualizado. Una valoración pendiente de revisión o de cotejo curricular bloquea una nueva nota final; no se traduce una valoración cualitativa en números. Los cierres previos permanecen en el historial.
 
@@ -284,4 +284,11 @@ Inicio muestra un selector de módulo y cinco tareas ordenadas: preparar, crear 
 
 En Ajustes > Recuperar una copia de seguridad, seleccione una copia local y confirme. La aplicación verifica el manifiesto e intenta recuperar los archivos a una nueva carpeta hermana de la carpeta activa. Muestra su ruta y no modifica la configuración de arranque ni sobrescribe la base de datos actual. Las copias antiguas sin manifiesto no son compatibles con este procedimiento. La activación de los datos recuperados sigue siendo una operación separada, tras cerrar la aplicación y contrastar su contenido. El ZIP no cifra datos académicos. No use copias de origen desconocido.
 
-La ejecución 112 de GitHub Actions verificó 390 pruebas y sintaxis JavaScript antes de esta intervención de UX. Las nuevas modificaciones requieren comprobación de CI y pruebas interactivas reales; no se declaran verificadas por la mera revisión de código.
+La ejecución 112 de GitHub Actions verificó 390 pruebas y sintaxis JavaScript antes de esta intervención de UX. La ejecución 126 y el flujo de candidatos verificaron 391 pruebas, sintaxis y arranque en las cuatro plataformas. Quedan pendientes pruebas interactivas reales.
+
+
+### Candidato auditado: comprobaciones de aceptación
+
+El 21/11/2026 se integró la [solicitud n.º 1](https://github.com/atreyu1968/EvaluaFPCanarias/pull/1) en main (merge dac7c283). Los artefactos identificados arriba se construyeron desde e317fd88, no desde las posteriores modificaciones documentales. La numeración interna de los binarios se conserva; no se ha publicado una nueva release permanente.
+
+Para una prueba de aceptación, extraiga el ZIP de GitHub y luego el archivo de distribución. Compruebe el SHA-256 del archivo interior, arranque desde una carpeta escribible con datos ficticios, compruebe la ventana nativa, el selector de módulo, el flujo guiado, una calificación de prueba y su cierre, el cuaderno competencial, las evidencias FEOE, los informes PDF/XLSX y una copia con recuperación aislada. Compruebe que los datos permanecen después de reiniciar. En macOS utilice el lanzador incluido, en Linux compruebe las bibliotecas gráficas y en Windows WebView2. No desactive globalmente las protecciones del sistema ante avisos de ejecutables sin firma. Anote sistema operativo, arquitectura, versión, resultado y diagnóstico, evitando datos personales. No use datos reales antes de la aceptación.
