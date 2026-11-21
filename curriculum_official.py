@@ -9,7 +9,17 @@ import re
 import urllib.request
 import unicodedata
 
-SUPPORTED = {'tecnica contable': ('BOE-A-2009-19148','0441')}
+SUPPORTED = {
+    'tecnica contable': ('BOE-A-2009-19148', '0441'),
+    'tratamiento de la documentacion contable': ('BOE-A-2009-19148', '0443'),
+}
+# Integridad de la publicación original, no certificación de vigencia.
+EXPECTED_COVERAGE = {
+    ('BOE-A-2009-19148', '0441'): (7, 9, 9, 7, 9),
+    ('BOE-A-2009-19148', '0443'): (7, 8, 9, 10),
+}
+TITLE_AMENDMENT = 'https://www.boe.es/eli/es/rd/2024/05/21/499'
+TITLE_CONSOLIDATED_REFERENCE = 'https://www.boe.es/eli/es/rd/2009/10/30/1631/con'
 BOE_PATTERN = re.compile(r'BOE-A-[12]\d{3}-\d{1,7}\Z', re.IGNORECASE)
 
 
@@ -89,13 +99,27 @@ def parse_curriculum(document_text, module_name, expected_code=None):
     return {'outcomes':ras,'module_code':code}
 
 
+def check_coverage(outcomes, expected):
+    """Rechaza extracciones parciales, duplicadas o con saltos."""
+    if len(outcomes) != len(expected):
+        raise ValueError('La fuente no ofrece todos los RA esperados.')
+    for i, (ra, count) in enumerate(zip(outcomes, expected), 1):
+        code = 'RA' + str(i)
+        if ra.get('code') != code or [c.get('code') for c in ra.get('criteria', [])] != [
+            code + '.' + chr(97 + j) for j in range(count)
+        ]:
+            raise ValueError('La fuente no ofrece todos los CE consecutivos de ' + code +
+                             '. No se admite una extracción parcial.')
+
+
 def fetch_official(module_name, boe_id=None, consent=False):
     if not consent:raise ValueError('Debe confirmar la consulta a la fuente oficial.')
     normalized=' '.join(_norm(module_name).split())
     template=SUPPORTED.get(normalized)
-    if not template and not boe_id:
-        raise ValueError('Para este módulo indique el identificador BOE-A-AAAA-NNN de la norma aplicable.')
-    if boe_id is None or not str(boe_id).strip():boe_id=template[0]
+    if boe_id is None or not str(boe_id).strip():
+        if not template:
+            raise ValueError('Para este módulo indique el identificador BOE-A-AAAA-NNN de la norma aplicable.')
+        boe_id=template[0]
     boe_id=str(boe_id).strip().upper()
     if not BOE_PATTERN.fullmatch(boe_id):
         raise ValueError('Introduzca un identificador oficial BOE-A-AAAA-NNN válido.')
@@ -110,11 +134,25 @@ def fetch_official(module_name, boe_id=None, consent=False):
             document=raw.decode(charset,'replace')
     except (OSError,TimeoutError) as exc:
         raise ValueError('No se puede consultar el BOE. Revise la conexión y vuelva a intentarlo.') from exc
-    expected=template[1] if template and boe_id==template[0] else None
+    expected=template[1] if template else None
     parsed=parse_curriculum(document,module_name,expected)
+    counts=EXPECTED_COVERAGE.get((boe_id, parsed['module_code']))
+    if counts:
+        check_coverage(parsed['outcomes'], counts)
+        parsed['reference_coverage']={
+            'expected_ra':len(counts), 'expected_ce':sum(counts),
+            'criteria_per_ra':list(counts),
+            'complete_for_original_source':True,
+            'territorial_curriculum_confirmed':False,
+        }
+        parsed['verification_links']={
+            'state_title':TITLE_CONSOLIDATED_REFERENCE,
+            'state_amendment':TITLE_AMENDMENT,
+        }
     parsed.update({'source':'BOE','source_url':url,'source_id':boe_id,
         'consulted_at':datetime.now(timezone.utc).isoformat(timespec='seconds'),
-        'warnings':['Propuesta procedente del BOE: contraste su vigencia y las normas de desarrollo de la administración educativa competente antes de confirmarla.',
+        'warnings':['Propuesta de la publicación original del BOE, no certificación de vigencia. Contraste sus modificaciones y las normas autonómicas aplicables antes de confirmarla.',
+                    'Conserve literalmente los RA/CE; contextualice los supuestos tributarios con IGIC cuando corresponda, sin sustituir el texto normativo.',
                     'La normativa no asigna ponderaciones a los RA y CE de la programación. Se mantienen sin completar.'],
         'coverage':{'ra_cited':len(parsed['outcomes']),'ra_accepted':len(parsed['outcomes']),
                     'ce_proposed':sum(len(x['criteria']) for x in parsed['outcomes']),

@@ -106,3 +106,7 @@ GitHub Actions ha superado **307 pruebas** y ha generado los cuatro paquetes por
 **Protección de datos:** no transmitir a servicios IA datos identificativos de alumnado sin base jurídica y autorización correspondiente. Mantener copias de seguridad, restringir el acceso al equipo y verificar cualquier calificación antes de considerarla definitiva.
 
 © Francisco Javier González Rolo. Edición para uso docente.
+
+## Consulta curricular de los módulos contables
+
+Los módulos 0441 y 0443 permiten consultar la publicación original del RD 1631/2009 sin escribir su identificador. Se exige que la extracción incluya todos los RA y CE consecutivos: 0441 (5 RA, 41 CE), 0443 (4 RA, 34 CE). La consulta no crea notas ni asigna ponderaciones y requiere revisión docente. La fuente original debe contrastarse con el RD 499/2024 y la normativa canaria. Las pruebas utilizan documentos artificiales y no certifican la vigencia curricular.
