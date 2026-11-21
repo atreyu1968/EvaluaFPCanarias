@@ -168,6 +168,17 @@ def init():
         # Sistema de evaluación de unidades, instrumentos y evidencias.
         import evaluacion
         evaluacion.migrate(d)
+        # Inicializar las tablas canarias antes de aceptar peticiones HTTP.
+        # Migraciones aditivas e idempotentes: no se eliminan datos ni notas.
+        import common_scopes
+        import common_scope_notebook
+        import common_scope_consolidation
+        import common_scope_recovery
+        import canarias_cycle_record
+        import canarias_feoe
+        for feature in (common_scopes, common_scope_notebook, common_scope_consolidation,
+                        common_scope_recovery, canarias_cycle_record, canarias_feoe):
+            feature.migrate(d)
         # Banco de preguntas persistente: los modelos comparten ponderaciones, no preguntas.
         d.executescript('''
         CREATE TABLE IF NOT EXISTS exam_batches(
