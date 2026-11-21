@@ -201,3 +201,47 @@ def record(db,mid,sid,raw):
         json.dumps(snap,ensure_ascii=False),agreement,meeting,data.now()))
     data.log(db,'cycle_decision_recorded','module',mid,{'record_id':cur.lastrowid,'action':facts['action']})
     return {'id':cur.lastrowid,'result':result}
+
+
+def export_agreement(db,mid,sid,record_id):
+    """Informe interno imprimible con la instantánea original, nunca un acta."""
+    import html
+    student(db,mid,sid)
+    migrate(db)
+    row=db.execute("""SELECT * FROM cycle_decision_records
+        WHERE id=? AND anchor_module_id=? AND anchor_student_id=?""",(record_id,mid,sid)).fetchone()
+    if not row:
+        raise ValueError('Actuación no encontrada en el expediente seleccionado.')
+    snap=json.loads(row['snapshot_json'])
+    result=json.loads(row['result_json'])
+    facts=json.loads(row['input_json'])
+    esc=lambda value:html.escape(str(value if value is not None else ''))
+    table_rows=''.join('<tr>'+''.join('<td>'+esc(value)+'</td>' for value in
+        (x['name'],x['status'],x.get('score'),x.get('closure_id'),x.get('warning','')))+
+        '</tr>' for x in snap['items'])
+    fact_rows=''.join('<li><strong>'+esc(k)+':</strong> '+esc(v)+'</li>' for k,v in facts.items())
+    sources=''.join('<li>'+esc(u)+'</li>' for u in result['sources'])
+    doc=f"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+    <title>Informe interno de actuación académica</title>
+    <style>@page{{size:A4;margin:18mm}}body{{font:11pt/1.5 Arial,sans-serif;color:#192638;max-width:900px;margin:auto}}
+    h1{{font-size:20pt}}h2{{font-size:14pt}}table{{border-collapse:collapse;width:100%;font-size:9pt}}
+    th,td{{border:1px solid #cbd5e1;padding:6px;vertical-align:top;text-align:left}}
+    th{{background:#e9eff5}}tr{{break-inside:avoid}}p{{white-space:pre-wrap;overflow-wrap:anywhere}}
+    code{{overflow-wrap:anywhere}}@media print{{body{{max-width:none}}}}</style></head><body>
+    <h1>Informe interno de actuación académica</h1>
+    <p><strong>NO CONSTITUYE ACTA OFICIAL</strong> · EvaluaFP Canarias</p>
+    <p>Alumno: {esc(snap['student']['name'])} · Código {esc(snap['student']['code'])}
+    Ciclo: {esc(snap['cycle'])} · Curso {esc(snap['course'])} · Grupo {esc(snap['group'])}
+    Año académico: {esc(snap['academic_year'])} · Convocatoria: {esc(snap['session'])}
+    Registro: {esc(row['created_at'])} · Referencia: {esc(row['meeting_ref'])}</p>
+    <h2>Comprobación orientativa</h2><p>{esc(result['status'])} — {esc(result['reason'])}</p>
+    <h2>Actuación o acuerdo motivado</h2><p>{esc(row['agreement'])}</p>
+    <h2>Datos contrastados introducidos por el docente</h2><ul>{fact_rows}</ul>
+    <h2>Instantánea de módulos y materias</h2><p>{esc(snap['notice'])}</p>
+    <table><thead><tr><th>Módulo</th><th>Estado</th><th>Nota registrada</th><th>Registro</th><th>Observaciones</th></tr></thead><tbody>{table_rows}</tbody></table>
+    <h2>Referencias normativas de la comprobación</h2><ul>{sources}</ul>
+    <p>Versión de reglas: {esc(result['rules_version'])}
+    SHA-256 de la instantánea: <code>{esc(row['report_sha256'])}</code></p>
+    <p>Este documento conserva los datos del momento del registro; compruebe su vigencia antes de utilizarlo. Custodia interna del centro.</p>
+    </body></html>"""
+    return doc.encode('utf-8'),'text/html; charset=utf-8',f'EvaluaFP_Actuacion_{record_id}.html'
