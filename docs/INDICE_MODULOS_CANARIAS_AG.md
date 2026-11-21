@@ -1,13 +1,15 @@
 # Índice documental de módulos de Administración y Gestión
 
-**Fuente:** Resolución de la Dirección General de FP de 30/10/2024, Anexo VI, publicada en el BOC n.º 226 de 13/11/2024.
+**Fuente:** Resolución de la Dirección General de FP de 30/10/2024, Anexos V (Grado Básico) y VI (Grados Medio y Superior), publicada en el BOC n.º 226 de 13/11/2024.
+
+Anexo V CFGB: https://www3.gobiernodecanarias.org/medusa/proyecto/38001553-0006/wp-content/uploads/sites/1326/2024/11/anexo-5-resolucion-instrucciones-implantacion-distribucion-horaria-curriculos-24.pdf
 
 URL: https://www.gobiernodecanarias.org/cmsgob1/export/sites/educacion/web/_galerias/descargas/otros/anexo-6-resolucion-instrucciones-implantacion-distribucion-horaria-curriculos-24.pdf
 
 - CFGM Gestión Administrativa: página BOC 38875 (15 módulos identificados con código).
 - CFGS Administración y Finanzas: página BOC 38876 (16 módulos identificados con código).
 - CFGS Asistencia a la Dirección: página BOC 38877 (15 módulos identificados con código).
-- CFGB Servicios Administrativos: **todavía sin indexar**; requiere revisión de su resolución curricular específica, no se suponen sus horas.
+- CFGB Servicios Administrativos: página BOC 38847 (anexo V), **16 referencias** entre módulos profesionales y materias generales. Se excluye Tutoría. Las materias sin código de Real Decreto se identifican como tales.
 
 Se omite el código del **módulo profesional optativo**, porque el anexo no facilita un único código y la oferta concreta depende del centro. Puede añadirse manualmente.
 

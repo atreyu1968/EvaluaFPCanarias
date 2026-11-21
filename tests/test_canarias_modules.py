@@ -1,6 +1,6 @@
 """La consulta de módulos se basa en referencias, no en currículo certificado."""
 import unittest
-from canarias_modules import list_modules, REGISTRY, SOURCE_URL
+from canarias_modules import list_modules, SOURCE_URL, BASIC_SOURCE_URL
 
 class ModuleReferenceTests(unittest.TestCase):
     def test_cycle_counts_and_unique_codes(self):
@@ -26,10 +26,16 @@ class ModuleReferenceTests(unittest.TestCase):
                     if m["code"] == "0652")
         self.assertEqual((item["name"], item["course"], item["reference_annual_hours"]),
                          ("Gestión de recursos humanos",2,138))
-    def test_basic_falls_back_to_manual(self):
+    def test_basic_includes_general_and_professional_fields(self):
         item = list_modules("CFGB Servicios Administrativos","2026-2027")
-        self.assertEqual(item["modules"], [])
-        self.assertIn("Grado Básico", item["notice"])
+        self.assertEqual(item["count"], 16)
+        self.assertEqual(item["source_url"], BASIC_SOURCE_URL)
+        self.assertEqual(len([x for x in item["modules"] if x["code"] is None]), 4)
+        self.assertTrue(all(x["curriculum_confirmed"] is False for x in item["modules"]))
+        module = next(x for x in item["modules"] if x["code"] == "3002")
+        self.assertEqual((module["name"],module["course"],module["reference_annual_hours"]),
+                         ("Aplicaciones básicas de ofimática",2,302))
+        self.assertFalse(any(x["name"] == "Tutoría" for x in item["modules"]))
     def test_other_cycles_disallowed(self):
         with self.assertRaises(ValueError):
             list_modules("CFGM Cuidados Auxiliares", "2026-2027")

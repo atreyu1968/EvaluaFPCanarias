@@ -59,12 +59,37 @@ _AD = _GS_COMMON + (
     ("1710", "Itinerario personal para la empleabilidad II", 2, 96, 3),
     ("0664", "Proyecto intermodular de asistencia a la dirección", 2, 64, 2),
 )
+
+BASIC_SOURCE_URL = "https://www3.gobiernodecanarias.org/medusa/proyecto/38001553-0006/wp-content/uploads/sites/1326/2024/11/anexo-5-resolucion-instrucciones-implantacion-distribucion-horaria-curriculos-24.pdf"
+BASIC_SOURCE_TITLE = "BOC 2024/226, anexo V: distribución de CFGB Servicios Administrativos"
+# Tutoría no se indexa como módulo con RA/CE. Las materias sin código RD
+# figuran con code=None, conservando curso y ámbito para diferenciarlas.
+_BASIC = (
+    ("3161", "Lengua castellana y Ciencias sociales", 1, 132, 4),
+    (None, "Lengua extranjera de iniciación profesional", 1, 66, 2),
+    ("3163", "Matemáticas y Ciencias aplicadas", 1, 132, 4),
+    (None, "Actividad física y bienestar emocional", 1, 66, 2),
+    ("3001", "Tratamiento informático de datos", 1, 236, 7),
+    ("3003", "Técnicas administrativas básicas", 1, 236, 7),
+    ("3006", "Preparación de pedidos y venta de productos", 1, 66, 2),
+    (None, "Prevención y salud laboral", 1, 33, 1),
+    ("3162", "Lengua castellana y Ciencias sociales", 2, 66, 2),
+    (None, "Lengua extranjera de iniciación profesional", 2, 66, 2),
+    ("3164", "Matemáticas y Ciencias aplicadas", 2, 132, 4),
+    ("3002", "Aplicaciones básicas de ofimática", 2, 302, 9),
+    ("3005", "Atención al cliente", 2, 66, 2),
+    ("3004", "Archivo y comunicación", 2, 203, 6),
+    ("3159", "Itinerario personal para la empleabilidad", 2, 66, 2),
+    ("3160", "Proyecto intermodular de aprendizaje colaborativo (GB)", 2, 66, 2),
+)
 REGISTRY = {
+    "CFGB Servicios Administrativos": _BASIC,
     "CFGM Gestión Administrativa": _GM,
     "CFGS Administración y Finanzas": _AF,
     "CFGS Asistencia a la Dirección": _AD,
 }
 SOURCE_PAGE = {
+    "CFGB Servicios Administrativos": 38847,
     "CFGM Gestión Administrativa": 38875,
     "CFGS Administración y Finanzas": 38876,
     "CFGS Asistencia a la Dirección": 38877,
@@ -77,10 +102,13 @@ def list_modules(cycle: str, academic_year: str) -> dict:
     year = year_code(academic_year)
     canonical = canarias_ag.canonical_cycle(cycle)
     rows = REGISTRY.get(canonical, ())
+    is_basic = canonical == 'CFGB Servicios Administrativos'
+    source = BASIC_SOURCE_URL if is_basic else SOURCE_URL
+    source_title = BASIC_SOURCE_TITLE if is_basic else SOURCE_TITLE
     items = [
         {"code": code, "name": name, "course": course,
          "reference_annual_hours": hours, "reference_weekly_hours": weekly,
-         "source_url": SOURCE_URL, "source_page": SOURCE_PAGE[canonical],
+         "source_url": source, "source_page": SOURCE_PAGE[canonical],
          "reference_academic_year": REFERENCE_YEAR,
          "curriculum_confirmed": False, "hours_confirmed": False}
         for code, name, course, hours, weekly in rows
@@ -88,16 +116,15 @@ def list_modules(cycle: str, academic_year: str) -> dict:
     return {
         "territory": "Canarias", "family": "Administración y Gestión",
         "academic_year": year, "cycle": canonical, "count": len(items),
-        "modules": items, "source_url": SOURCE_URL, "source_title": SOURCE_TITLE,
+        "modules": items, "source_url": source, "source_title": source_title,
         "reference_academic_year": REFERENCE_YEAR,
         "status": "reference_requires_current_verification",
-        "notice": ("Listado de referencia del anexo VI de 2024. Compruebe la "
-                   "vigencia y las modificaciones posteriores para " + year +
-                   ". Las horas no se asignan a ninguna programación y los "
-                   "RA/CE no se importan sin confirmación. Los módulos "
-                   "optativos dependen de la oferta concreta del centro."
-                   if rows else
-                   "La edición aún no incorpora el índice de módulos de "
-                   "Grado Básico. Introduzca la denominación desde el currículo "
-                   "canario que corresponda al curso y verifíquela."),
+        "notice": (
+            "Referencia del anexo " + ("V" if is_basic else "VI") +
+            " del BOC de 2024. Compruebe modificaciones y vigencia para " + year +
+            ". Las horas no se incorporan automáticamente a las programaciones "
+            "y no se importan RA/CE. La optativa y los ámbitos sin código "
+            "RD requieren confirmación de la oferta y programación del centro. "
+            "Tutoría queda fuera del índice de módulos."
+        ),
     }

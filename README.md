@@ -40,7 +40,7 @@ En **Preparar módulo**, al seleccionar un ciclo, se consulta el índice documen
 - **15 referencias** de CFGM Gestión Administrativa.
 - **16 referencias** de CFGS Administración y Finanzas.
 - **15 referencias** de CFGS Asistencia a la Dirección.
-- CFGB Servicios Administrativos se mantiene como entrada manual hasta comprobar el currículo de Grado Básico.
+- **16 referencias** de CFGB Servicios Administrativos, incluidas materias de los ámbitos generales sin código RD. Se excluye Tutoría por no constituir un módulo con RA/CE.
 - La optativa queda como entrada manual porque requiere la oferta concreta del centro.
 
 **Importante:** códigos, denominaciones y horas son una **referencia del Anexo VI de 2024**, no una certificación automática de vigencia para el curso 2026-2027. La aplicación NO rellena las horas de programación ni los RA/CE a partir de este índice.

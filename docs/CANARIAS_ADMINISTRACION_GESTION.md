@@ -35,6 +35,6 @@ Proyecto derivado; las modificaciones se realizan exclusivamente en https://gith
 
 ## Segunda fase: selector documental de módulos
 
-Se añade un índice orientativo de 46 módulos con código de las tres titulaciones de grado medio/superior, a partir del anexo VI del BOC 2024/226. La selección facilita la denominación, pero **no certifica vigencia 2026-2027, RA/CE ni horas**. No hay todavía catálogo indexado de Servicios Administrativos ni optativas específicas.
+Se añade un índice orientativo de 62 referencias de las cuatro titulaciones de grado básico, medio y superior, a partir del anexo VI del BOC 2024/226. La selección facilita la denominación, pero **no certifica vigencia 2026-2027, RA/CE ni horas**. Las optativas específicas y la vigencia del curso deben verificarse.
 
 [Detalles y fuente](INDICE_MODULOS_CANARIAS_AG.md).
