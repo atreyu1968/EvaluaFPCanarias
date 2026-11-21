@@ -475,6 +475,10 @@ class Handler(BaseHTTPRequestHandler):
                         stats[table]=d.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]
                     return self.send(stats)
                 if path=='/api/modules':return self.send(data.dicts(d.execute('SELECT * FROM modules ORDER BY id DESC')))
+                if path=='/api/feoe':
+                    import canarias_feoe
+                    sid=(args.get('stay_id') or [''])[0]
+                    return self.send(canarias_feoe.load(d,int(sid) if sid else None))
                 if path=='/api/cycle-record/agreement.html':
                     import canarias_cycle_record as cycle_record
                     mid=int((args.get('module_id') or ['0'])[0])
@@ -1147,6 +1151,15 @@ class Handler(BaseHTTPRequestHandler):
                 d.execute('UPDATE materials SET active=? WHERE id=?',(int(active),pid))
                 data.log(d,'material_status_changed','material',pid,{'active':active})
             return self.send({'ok':True,'active':active})
+        if path in ('/api/feoe/company','/api/feoe/stay','/api/feoe/target','/api/feoe/confirm',
+                    '/api/feoe/attendance','/api/feoe/valuation','/api/feoe/review'):
+            import canarias_feoe as feoe
+            actions={'company':feoe.company,'stay':feoe.stay,'target':feoe.add_target,
+                     'confirm':feoe.confirm_plan,'attendance':feoe.attendance,
+                     'valuation':feoe.valuation,'review':feoe.teacher_review}
+            with data.connect() as d:
+                ident=actions[path.rsplit('/',1)[1]](d,body)
+            return self.send({'id':ident})
         if path=='/api/cycle-record/decision':
             import canarias_cycle_record as cycle_record
             mid=int(body['module_id'])
