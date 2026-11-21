@@ -258,3 +258,29 @@ def load(db,stay_id=None):
     result['actual_hours']=str(sum((Decimal(a['hours']) for a in latest.values()),Decimal(0)))
     result['notice']='Registro interno: no autoriza incorporación ni modifica las notas de módulos.'
     return result
+
+
+def module_evidence(db,mid):
+    """Puente de consulta para el profesor del módulo; no escribe puntuaciones."""
+    migrate(db)
+    rows=data.dicts(db.execute("""SELECT t.id,t.student_id,t.snapshot_json,t.location,
+        s.id AS stay_id,st.name AS student_name,st.code AS student_code,c.name AS company_name
+        FROM feoe_targets t JOIN feoe_stays s ON s.id=t.stay_id
+        JOIN students st ON st.id=t.student_id AND st.module_id=t.module_id
+        JOIN feoe_companies c ON c.id=s.company_id
+        JOIN feoe_plan_confirmations p ON p.stay_id=s.id
+        WHERE t.module_id=? AND t.location!='centro' ORDER BY st.name,t.id""",(mid,)))
+    for r in rows:
+        snap=json.loads(r.pop('snapshot_json'))
+        current=next((x for x in curriculum(db,r['stay_id']) if x['id']==snap['id']),None)
+        r['ra_code']=snap['code']
+        r['ra_description']=snap['description']
+        r['criterion_codes']=[x['code'] for x in snap['criteria'] if x['id'] in snap['selected_criterion_ids']]
+        r['current_curriculum']=current=={k:v for k,v in snap.items() if k!='selected_criterion_ids'}
+        v=db.execute('SELECT * FROM feoe_valuations WHERE target_id=? ORDER BY id DESC LIMIT 1',(r['id'],)).fetchone()
+        r['valuation']=dict(v) if v else None
+        r['teacher_review']=None
+        if v:
+            review=db.execute('SELECT * FROM feoe_teacher_reviews WHERE valuation_id=? ORDER BY id DESC LIMIT 1',(v['id'],)).fetchone()
+            r['teacher_review']=dict(review) if review else None
+    return rows
