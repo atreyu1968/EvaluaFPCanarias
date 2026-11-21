@@ -294,6 +294,16 @@ El 21/11/2026 se integró la [solicitud n.º 1](https://github.com/atreyu1968/Ev
 Para una prueba de aceptación, extraiga el ZIP de GitHub y luego el archivo de distribución. Compruebe el SHA-256 del archivo interior, arranque desde una carpeta escribible con datos ficticios, compruebe la ventana nativa, el selector de módulo, el flujo guiado, una calificación de prueba y su cierre, el cuaderno competencial, las evidencias FEOE, los informes PDF/XLSX y una copia con recuperación aislada. Compruebe que los datos permanecen después de reiniciar. En macOS utilice el lanzador incluido, en Linux compruebe las bibliotecas gráficas y en Windows WebView2. No desactive globalmente las protecciones del sistema ante avisos de ejecutables sin firma. Anote sistema operativo, arquitectura, versión, resultado y diagnóstico, evitando datos personales. No use datos reales antes de la aceptación.
 
 
-## Beta.5: publicación permanente
+## Beta.5: distribución verificada (21/11/2026)
 
-La versión beta.5 se identifica internamente como 1.2.10-AG-CN-beta.5. [GitHub Releases](https://github.com/atreyu1968/EvaluaFPCanarias/releases) alojará la distribución preliminar una vez completados los controles de compilación y las autopruebas de las cuatro arquitecturas. Mientras no aparezca la etiqueta v1.2.10-AG-CN-beta.5, los enlaces de la beta.4 auditada siguen siendo candidatos temporales. Consulte los [cambios](docs/BETA5_RELEASE.md), [manual Windows](docs/manuales/WINDOWS.md), [manual Linux](docs/manuales/LINUX.md), [manual macOS](docs/manuales/MACOS.md) y [guía didáctica](docs/manuales/DIDACTICO_CANARIAS.md). Ninguna compilación sustituye la prueba interactiva en un equipo real.
+La versión 1.2.10-AG-CN-beta.5 está integrada en main: 391 pruebas automatizadas superadas, cuatro compilaciones con autopruebas de arranque y cuatro manuales ilustrados (69 páginas). La ejecución verificada es [44957136836](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44957136836). Falta confirmar la publicación permanente en [GitHub Releases](https://github.com/atreyu1968/EvaluaFPCanarias/releases); hasta entonces, utilizar estos artefactos temporales, con sesión en GitHub y retención hasta el 21/12/2026.
+
+| Sistema | Descarga |
+|---|---|
+| Windows x64 | [Portable](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44957136836/artifacts/14727529843) |
+| Linux x64 | [Portable](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44957136836/artifacts/14727997630) |
+| macOS Intel | [Portable](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44957136836/artifacts/14727787313) |
+| macOS Apple Silicon | [Portable](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44957136836/artifacts/14727833266) |
+| Manuales PDF | [Cuatro documentos ilustrados](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44957136836/artifacts/14728426288) |
+
+El flujo de promoción comprueba que el árbol de código compilado coincide con la integración 67c81480, los trabajos del CI son satisfactorios y las cuatro huellas SHA-256 coinciden antes de publicar. No sobrescribe una publicación anterior. Consulte las [notas](docs/BETA5_RELEASE.md). Los paquetes no disponen de firma comercial ni notarización; queda pendiente aceptación visual y funcional en equipos reales. Use datos ficticios antes de la aceptación y haga una copia externa de los datos anteriores.
