@@ -82,6 +82,27 @@ _BASIC = (
     ("3159", "Itinerario personal para la empleabilidad", 2, 66, 2),
     ("3160", "Proyecto intermodular de aprendizaje colaborativo (GB)", 2, 66, 2),
 )
+# Normas estatales de título que permiten localizar enseñanzas mínimas.
+# NO sustituyen a los currículos ni a las instrucciones de Canarias.
+NATIONAL_TITLES = {
+    "CFGB Servicios Administrativos": {
+        "title": "Real Decreto 127/2014, anexo I (Servicios Administrativos)",
+        "url": "https://www.boe.es/eli/es/rd/2014/02/28/127",
+    },
+    "CFGM Gestión Administrativa": {
+        "title": "Real Decreto 1631/2009 (Gestión Administrativa)",
+        "url": "https://www.boe.es/eli/es/rd/2009/10/30/1631",
+    },
+    "CFGS Administración y Finanzas": {
+        "title": "Real Decreto 1584/2011 (Administración y Finanzas)",
+        "url": "https://www.boe.es/eli/es/rd/2011/11/04/1584",
+    },
+    "CFGS Asistencia a la Dirección": {
+        "title": "Real Decreto 1582/2011 (Asistencia a la Dirección)",
+        "url": "https://www.boe.es/eli/es/rd/2011/11/04/1582",
+    },
+}
+
 REGISTRY = {
     "CFGB Servicios Administrativos": _BASIC,
     "CFGM Gestión Administrativa": _GM,
@@ -123,6 +144,8 @@ def list_modules(cycle: str, academic_year: str, course: str | int | None = None
         "total_count": len(complete), "filter_course": selected_course,
         "modules": items, "source_url": source, "source_title": source_title,
         "reference_academic_year": REFERENCE_YEAR,
+        "state_title_regulation": deepcopy(NATIONAL_TITLES[canonical]),
+        "state_title_status": "state_minimums_reference_only",
         "status": "reference_requires_current_verification",
         "notice": (
             "Referencia del anexo " + ("V" if is_basic else "VI") +
@@ -130,6 +153,8 @@ def list_modules(cycle: str, academic_year: str, course: str | int | None = None
             ". Las horas no se incorporan automáticamente a las programaciones "
             "y no se importan RA/CE. La optativa y los ámbitos sin código "
             "RD requieren confirmación de la oferta y programación del centro. "
-            "Tutoría queda fuera del índice de módulos."
+            "Tutoría queda fuera del índice de módulos. La norma estatal de "
+            "título es una referencia para buscar RA y CE, pero debe "
+            "contrastarse con las modificaciones y la normativa de Canarias."
         ),
     }

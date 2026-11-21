@@ -42,6 +42,7 @@ En **Preparar módulo**, al seleccionar un ciclo, se consulta el índice documen
 - **15 referencias** de CFGS Asistencia a la Dirección.
 - **16 referencias** de CFGB Servicios Administrativos, incluidas materias de los ámbitos generales sin código RD. Se excluye Tutoría por no constituir un módulo con RA/CE.
 - La optativa queda como entrada manual porque requiere la oferta concreta del centro.
+- Cada ciclo muestra un enlace al **Real Decreto estatal del título** (BOE). Esta fuente es orientativa para identificar RA/CE: no equivale a verificar su vigencia, modificaciones, currículo autonómico ni ponderaciones.
 
 **Importante:** códigos, denominaciones y horas son una **referencia de los anexos V (CFGB) y VI (GM/GS) de 2024**, no una certificación automática de vigencia para el curso 2026-2027. La aplicación NO rellena las horas de programación ni los RA/CE a partir de este índice.
 
@@ -57,6 +58,10 @@ Fuentes normativas de referencia:
 - [Currículos de CFGB Canarias](https://www.gobiernodecanarias.org/educacion/web/formacion_profesional/ensenanzas/fpgb/curriculos_fpgb/)
 - [Oferta oficial de títulos Canarias](https://www.gobiernodecanarias.org/educacion/web/formacion_profesional/ensenanzas/titulos/)
 - [BOC 2026/227 (Grados B y C nivel 1)](https://www.gobiernodecanarias.org/boc/2026/227/3917.html)
+
+## Compilaciones portátiles (fase de verificación)
+
+Se incorpora un flujo de GitHub Actions para compilar **Windows x64** y se mantiene el flujo para **Linux x64, macOS Intel y Apple Silicon**, con pruebas y comprobación de arranque de los binarios. Los archivos resultantes son artefactos temporales de Actions, **sin firma de código ni notarización**; la generación automática no sustituye una apertura real y una prueba funcional en cada sistema. Los ZIP/TAR.GZ no incorporan información personal.
 
 ## Instalación y pruebas
 

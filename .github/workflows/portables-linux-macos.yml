@@ -3,6 +3,8 @@ name: Compilar portátiles EvalúaFP Canarias
 on:
   workflow_dispatch:
   push:
+    branches: [main]
+    paths: ['.github/workflows/portables-linux-macos.yml']
     tags: ['v*']
 
 permissions:

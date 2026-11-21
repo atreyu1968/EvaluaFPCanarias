@@ -1,6 +1,6 @@
 """La consulta de módulos se basa en referencias, no en currículo certificado."""
 import unittest
-from canarias_modules import list_modules, SOURCE_URL, BASIC_SOURCE_URL
+from canarias_modules import list_modules, SOURCE_URL, BASIC_SOURCE_URL, NATIONAL_TITLES
 
 class ModuleReferenceTests(unittest.TestCase):
     def test_cycle_counts_and_unique_codes(self):
@@ -56,6 +56,15 @@ class ModuleReferenceTests(unittest.TestCase):
                 self.assertTrue(all(m["course"]==2 and not m["hours_confirmed"]
                                     for m in two["modules"]))
                 self.assertEqual((one["filter_course"],two["filter_course"]),(1,2))
+    def test_all_titles_have_official_boe_reference(self):
+        for cycle,ref in NATIONAL_TITLES.items():
+            with self.subTest(cycle=cycle):
+                actual=list_modules(cycle,'2026-2027')
+                self.assertEqual(actual['state_title_regulation'],ref)
+                self.assertEqual(actual['state_title_status'],'state_minimums_reference_only')
+                self.assertTrue(ref['url'].startswith('https://www.boe.es/eli/es/rd/'))
+                self.assertFalse(any(x['curriculum_confirmed'] for x in actual['modules']))
+
     def test_bad_course_filter_is_rejected(self):
         for course in ("0","3","1;DROP",True):
             with self.subTest(course=course), self.assertRaises(ValueError):

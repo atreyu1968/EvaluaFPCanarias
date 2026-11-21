@@ -174,10 +174,11 @@ function agCycleOptions(){
 }
 
 async function loadAGModuleSuggestions(form){
- const list=form.querySelector('#ag-module-list'),pick=form.querySelector('#ag-module-pick'),note=form.querySelector('#ag-module-note');
+ const list=form.querySelector('#ag-module-list'),pick=form.querySelector('#ag-module-pick'),note=form.querySelector('#ag-module-note'),source=form.querySelector('#ag-module-source');
  if(!list||!pick||!note)return;
  const cycle=form.elements.cycle?.value||'',year=form.elements.academic_year?.value||'',course=form.querySelector('#ag-course-filter')?.value||'';
  list.innerHTML='';pick.innerHTML='<option value="">Seleccione primero un ciclo</option>';
+ if(source)source.textContent='';
  if(!cycle){note.textContent='Seleccione un ciclo para consultar sus módulos.';return;}
  note.textContent='Consultando el índice documental de módulos de Canarias…';
  try{
@@ -192,6 +193,11 @@ async function loadAGModuleSuggestions(form){
       '" label="'+E((m.code||'Sin código RD')+' · '+m.course+'º · '+m.reference_annual_hours+' h (referencia de 2024)')+'"></option>').join('');
    pick.innerHTML='<option value="">Seleccione un módulo o escríbalo manualmente</option>'+
       modules.map(m=>'<option value="'+E(m.name)+'">'+E((m.code||'Sin código RD')+' · '+m.name+' · '+m.course+'º')+'</option>').join('');
+   const regulation=data.state_title_regulation||{};
+   if(source&&/^https:\/\/www\.boe\.es\/eli\/es\/rd\//.test(regulation.url||'')){
+     source.innerHTML='<a href="'+E(regulation.url)+'" target="_blank" rel="noopener noreferrer">Consultar norma estatal del título</a> · '+
+       E(regulation.title||'BOE')+'. Referencia para contrastar RA/CE: no acredita por sí sola el currículo autonómico vigente.';
+   }
    const annex=cycle.startsWith('CFGB')?'V':'VI';
    note.textContent=data.count+' referencias del anexo '+annex+' de 2024'+
       (course?' para '+course+'º curso':'')+'. La lista no acredita la vigencia para '+year+
@@ -958,7 +964,7 @@ async function viewPrepare(){
  <div class="field"><label>Ciclo formativo</label><select name="cycle" required>${agCycleOptions()}</select></div>
  <div class="field"><label for="ag-course-filter">Curso del ciclo (filtro opcional)</label><select id="ag-course-filter"><option value="">Primero y segundo</option><option value="1">1.º curso</option><option value="2">2.º curso</option></select></div>
  <div class="field"><label for="ag-module-pick">Elegir módulo de la lista de referencia</label><select id="ag-module-pick"><option value="">Seleccione primero un ciclo</option></select></div>
- <div class="field"><label>Nombre del módulo (editable)</label><input name="name" required list="ag-module-list" placeholder="Selecciona del listado o escribe el nombre"><datalist id="ag-module-list"></datalist><p class="small" id="ag-module-note">Elige un ciclo para consultar módulos de referencia.</p></div>
+ <div class="field"><label>Nombre del módulo (editable)</label><input name="name" required list="ag-module-list" placeholder="Selecciona del listado o escribe el nombre"><datalist id="ag-module-list"></datalist><p class="small" id="ag-module-note">Elige un ciclo para consultar módulos de referencia.</p><p class="small" id="ag-module-source"></p></div>
  <div class="field"><label>Grupo (opcional)</label><input name="group_name" placeholder="1.º A"></div>
  <input type="hidden" name="catalog_entry_id"><p class="small" data-catalog-selection></p>
  <button class="btn" type="submit">Crear módulo y continuar</button></form></section>${catalogPanel()}`;return;}
@@ -1139,7 +1145,7 @@ async function viewPrograms(){
  <div class="field"><label>Ciclo formativo</label><select required name="cycle">${agCycleOptions()}</select></div>
  <div class="field"><label for="ag-course-filter">Curso del ciclo (filtro opcional)</label><select id="ag-course-filter"><option value="">Primero y segundo</option><option value="1">1.º curso</option><option value="2">2.º curso</option></select></div>
  <div class="field"><label for="ag-module-pick">Elegir módulo de la lista de referencia</label><select id="ag-module-pick"><option value="">Seleccione primero un ciclo</option></select></div>
- <div class="field"><label>Módulo profesional (editable)</label><input required name="name" list="ag-module-list" placeholder="Selecciona del listado o escribe el nombre"><datalist id="ag-module-list"></datalist><p class="small" id="ag-module-note">Elige un ciclo para consultar módulos de referencia.</p></div>
+ <div class="field"><label>Módulo profesional (editable)</label><input required name="name" list="ag-module-list" placeholder="Selecciona del listado o escribe el nombre"><datalist id="ag-module-list"></datalist><p class="small" id="ag-module-note">Elige un ciclo para consultar módulos de referencia.</p><p class="small" id="ag-module-source"></p></div>
  <div class="field"><label>Grupo</label><input name="group_name" placeholder="1.º A"></div>
  <input type="hidden" name="catalog_entry_id"><p class="small" data-catalog-selection></p>
  <button class="btn" type="submit">Crear módulo</button></form></div>
