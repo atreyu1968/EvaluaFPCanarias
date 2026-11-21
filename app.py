@@ -475,6 +475,10 @@ class Handler(BaseHTTPRequestHandler):
                         stats[table]=d.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]
                     return self.send(stats)
                 if path=='/api/modules':return self.send(data.dicts(d.execute('SELECT * FROM modules ORDER BY id DESC')))
+                if path=='/api/common-scopes/notebook':
+                    import common_scope_notebook
+                    mid=int((args.get('module_id') or ['0'])[0])
+                    return self.send(common_scope_notebook.load(d,mid))
                 if path=='/api/common-scopes/draft':
                     import common_scopes
                     mid=int((args.get('module_id') or ['0'])[0])
@@ -1107,6 +1111,15 @@ class Handler(BaseHTTPRequestHandler):
                 d.execute('UPDATE materials SET active=? WHERE id=?',(int(active),pid))
                 data.log(d,'material_status_changed','material',pid,{'active':active})
             return self.send({'ok':True,'active':active})
+        if path in ('/api/common-scopes/activity','/api/common-scopes/evidence'):
+            import common_scope_notebook
+            mid=int(body['module_id'])
+            with data.connect() as d:
+                if path.endswith('/activity'):
+                    ident=common_scope_notebook.create_activity(d,mid,body.get('activity'))
+                else:
+                    ident=common_scope_notebook.record_evidence(d,mid,body.get('evidence'))
+            return self.send({'id':ident})
         if path=='/api/common-scopes/official':
             import common_scopes
             import common_scope_official
