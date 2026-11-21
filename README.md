@@ -97,7 +97,7 @@ En Windows pueden utilizarse `INICIAR_EVALUAFP.bat` y `CREAR_VERSION_PENDRIVE.ba
 python -m unittest discover -s tests -v
 ```
 
-GitHub Actions contiene comprobación de pruebas y un flujo manual de portátiles Linux/macOS. **No se afirma que haya ejecutables generados o validados para esta edición** hasta verificar los artefactos y una prueba real de apertura en cada sistema.
+GitHub Actions ha superado **307 pruebas** y ha generado los cuatro paquetes portátiles de la **beta.4**: [Windows x64](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44918796302) y [Linux x64, macOS Intel y macOS Apple Silicon](https://github.com/atreyu1968/EvaluaFPCanarias/actions/runs/44918800198). Los archivos se encuentran en la sección *Artifacts* (requiere acceso a GitHub), con conservación temporal de 30 días. Las pruebas de compilación y arranque automatizado no sustituyen la apertura y revisión visual real en cada sistema operativo; los portátiles no están firmados digitalmente.
 
 ## Documentación
 
