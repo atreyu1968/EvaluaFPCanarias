@@ -1732,6 +1732,20 @@ def selftest():
     import xlwt
     if not callable(getattr(exportaciones,'export_excel',None)):
         raise RuntimeError('La exportación Excel no está incluida en el EXE.')
+    # Comprobar los módulos canarios incorporados al candidato portable.
+    import canarias_backup
+    import canarias_academic_decisions
+    import canarias_cycle_record
+    import canarias_feoe
+    import common_scope_official
+    import common_scope_export
+    import common_scope_recovery
+    for func in (canarias_backup.make, canarias_backup.recover_archive,
+                 canarias_academic_decisions.evaluate, canarias_cycle_record.report,
+                 canarias_feoe.module_evidence, common_scope_export.export,
+                 common_scope_recovery.load):
+        if not callable(func):
+            raise RuntimeError('Falta una función de la edición canaria.')
     # Asegura que PyInstaller ha incluido la biblioteca de interfaz nativa.
     if os.name == 'nt' or getattr(sys, 'frozen', False):
         try:
@@ -1745,6 +1759,14 @@ def selftest():
             raise RuntimeError('SQLite no responde.')
         if db.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='modules'").fetchone()[0] != 1:
             raise RuntimeError('No se ha inicializado el esquema de SQLite.')
+        tables={r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        expected={'scope_activities','scope_evidence','scope_matter_grades',
+                  'scope_final_decisions','scope_recovery_plans','cycle_decision_records',
+                  'feoe_companies','feoe_stays','feoe_targets','feoe_valuations'}
+        if not expected<=tables:
+            raise RuntimeError('Faltan tablas canarias: '+', '.join(sorted(expected-tables)))
+        if db.execute('PRAGMA integrity_check').fetchall()[0][0]!='ok':
+            raise RuntimeError('La base SQLite no supera la prueba de integridad.')
     print('PRUEBA DE ARRANQUE CORRECTA', flush=True)
 
 
@@ -1766,6 +1788,7 @@ if __name__ == '__main__':
             logfile=data.DATA/'errores_inicio.log'
             logfile.write_text(traceback.format_exc(),encoding='utf-8')
             try:
+                if '--selftest' in sys.argv: raise RuntimeError('Prueba sin ventanas')
                 import ctypes
                 ctypes.windll.user32.MessageBoxW(None,
                     'EvalúaFP no ha podido iniciarse.\n\nDetalle: '+str(exc)[:400]+
