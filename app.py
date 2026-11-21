@@ -475,6 +475,10 @@ class Handler(BaseHTTPRequestHandler):
                         stats[table]=d.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]
                     return self.send(stats)
                 if path=='/api/modules':return self.send(data.dicts(d.execute('SELECT * FROM modules ORDER BY id DESC')))
+                if path=='/api/feoe/module-evidence':
+                    import canarias_feoe
+                    mid=int((args.get('module_id') or ['0'])[0])
+                    return self.send({'evidence':canarias_feoe.module_evidence(d,mid)})
                 if path=='/api/feoe':
                     import canarias_feoe
                     sid=(args.get('stay_id') or [''])[0]
