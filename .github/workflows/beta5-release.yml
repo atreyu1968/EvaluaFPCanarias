@@ -135,8 +135,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: pip install "reportlab>=4.2,<5" "PyMuPDF>=1.24,<2"
-      - run: python scripts/build_manuals_pdf.py
+      - run: pip install -r requirements.txt playwright
+      - run: python -m playwright install --with-deps chromium
+      - name: Capturar interfaz actual con datos ficticios
+        run: python scripts/capture_manual_screens.py --out dist/manual_screens
+      - name: Generar manuales con portada e índice
+        run: python scripts/build_manuals_pdf.py --screens dist/manual_screens
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta5-capturas-manuales
+          path: dist/manual_screens/*.png
+          if-no-files-found: error
+          retention-days: 30
       - uses: actions/upload-artifact@v4
         with:
           name: beta5-manuals
@@ -156,6 +166,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           pattern: beta5-*
+          # Los PNG son un artefacto auxiliar; la publicación solo incorpora PDFs y paquetes.
           merge-multiple: true
           path: release-assets
       - name: Validar cuatro paquetes y sus huellas
@@ -185,5 +196,5 @@ jobs:
             exit 1
           fi
           gh release create "$tag" --target "$GITHUB_SHA" --draft --prerelease --title "EvalúaFP Canarias 1.2.10 AG-CN beta.5" --notes-file docs/BETA5_RELEASE.md
-          gh release upload "$tag" release-assets/* docs/manuales/*.md
+          gh release upload "$tag" release-assets/*.zip release-assets/*.tar.gz release-assets/*.sha256 release-assets/*.pdf docs/manuales/*.md
           gh release edit "$tag" --draft=false --prerelease
