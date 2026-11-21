@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths: ['.github/workflows/portables-windows.yml']
 
+# Reconstrucción de beta.4 con las pruebas de procedencia, horas y
+# protección territorial incluidas. Las compilaciones anteriores quedan obsoletas.
 permissions:
   contents: read
 
