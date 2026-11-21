@@ -29,7 +29,7 @@ jobs:
       - name: Generar EXE nativo
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name "EvaluaFPCanarias" --icon "assets/EvaluaFP.ico" --add-data "web;web" --collect-all fitz --collect-all PIL --collect-all docx --collect-all keyring --collect-all webview --collect-all reportlab --collect-all cryptography --collect-all xlsxwriter --hidden-import xlwt --hidden-import webview.platforms.winforms --hidden-import desktop_caption --hidden-import general_calendar_library --hidden-import canarias_modules --hidden-import calendar_versions --hidden-import calendar_document --hidden-import calendar_annex --hidden-import calendar_ai app.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name "EvaluaFPCanarias" --icon "assets/EvaluaFP.ico" --add-data "web;web" --collect-all fitz --collect-all PIL --collect-all docx --collect-all keyring --collect-all webview --collect-all reportlab --collect-all cryptography --collect-all xlsxwriter --hidden-import xlwt --hidden-import webview.platforms.winforms --hidden-import desktop_caption --hidden-import general_calendar_library --hidden-import canarias_modules --hidden-import canarias_reference --hidden-import calendar_versions --hidden-import calendar_document --hidden-import calendar_annex --hidden-import calendar_ai app.py
           if ($LASTEXITCODE -ne 0) { throw "PyInstaller no ha terminado correctamente" }
           if (-not (Test-Path 'dist/EvaluaFPCanarias.exe')) { throw "No se ha generado el EXE" }
       - name: Preparar paquete sin datos personales
