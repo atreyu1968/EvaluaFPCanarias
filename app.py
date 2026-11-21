@@ -475,6 +475,11 @@ class Handler(BaseHTTPRequestHandler):
                         stats[table]=d.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]
                     return self.send(stats)
                 if path=='/api/modules':return self.send(data.dicts(d.execute('SELECT * FROM modules ORDER BY id DESC')))
+                if path=='/api/common-scopes/draft':
+                    import common_scopes
+                    mid=int((args.get('module_id') or ['0'])[0])
+                    meta=common_scopes.module_profile(d,mid)
+                    return self.send(common_scopes.load(d,mid) if meta else {'profile':None})
                 if path=='/api/national/boe-monitor':
                     import normative_monitor
                     mid=int((args.get('module_id') or ['0'])[0])
@@ -1102,10 +1107,19 @@ class Handler(BaseHTTPRequestHandler):
                 d.execute('UPDATE materials SET active=? WHERE id=?',(int(active),pid))
                 data.log(d,'material_status_changed','material',pid,{'active':active})
             return self.send({'ok':True,'active':active})
+        if path=='/api/common-scopes/save':
+            import common_scopes
+            mid=int(body['module_id'])
+            with data.connect() as d:
+                result=common_scopes.save(d,mid,body.get('draft'))
+            return self.send(result)
         if path=='/api/curriculum/official':
             mid=int(body['module_id'])
             with data.connect() as d:
-                module=must_row(d,'SELECT name,cycle FROM modules WHERE id=?',(mid,))
+                module=must_row(d,'SELECT name,cycle,territory FROM modules WHERE id=?',(mid,))
+                import common_scopes
+                if common_scopes.profile(module['name'],module['cycle'],module['territory']):
+                    raise ValueError('Los ámbitos comunes utilizan competencias específicas; abra Preparar mi módulo.')
                 if body.get('source_kind') == 'BOC':
                     import canarias_curriculum
                     proposal=canarias_curriculum.fetch(module['name'],module['cycle'],
@@ -1192,6 +1206,9 @@ class Handler(BaseHTTPRequestHandler):
             mid=int(body['module_id']);out=body.get('outcomes',[])
             with data.connect() as d:
                 module=must_row(d,'SELECT id,name,cycle,territory FROM modules WHERE id=?',(mid,))
+                import common_scopes
+                if common_scopes.profile(module['name'],module['cycle'],module['territory']):
+                    raise ValueError('No importe competencias específicas como RA profesionales. Abra Preparar mi módulo.')
                 source=str(body.get('source_url') or '')
                 consulted_at=body.get('consulted_at')
                 regional=None
