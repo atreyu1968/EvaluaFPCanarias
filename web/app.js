@@ -112,7 +112,9 @@ async function page(name){
  const revision=++navigationRevision;
  if(navigationController)navigationController.abort('navigation');
  navigationController=new AbortController();
- S.page=name;$('#page-title').textContent=titles()[name]||name;
+ S.page=name;
+ if(['feoe','expediente','decisiones','programaciones','ajustes'].includes(name)){S.advanced=true;syncMode();}
+ $('#page-title').textContent=titles()[name]||name;
  $all('[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===name));
  setLoading();
  try{
@@ -199,26 +201,23 @@ async function viewFeoe(){
  ${roster&&info.companies.length&&roster.students.length?`<form id="feoe-stay" class="formgrid"><div class="field"><label>Alumno</label><select name="student_id">${opt(roster.students,null,x=>x.name+' · '+x.code)}</select></div><div class="field"><label>Empresa</label><select name="company_id">${opt(info.companies,null,x=>x.name+' · '+x.workplace)}</select></div>${input('center_tutor','Tutor del centro')}${input('company_tutor','Tutor de empresa')}<div class="field"><label>Régimen</label><select name="regime"><option value="general">General</option><option value="intensivo">Intensivo</option></select></div><div class="field"><label>Inicio</label><input type="date" name="start_date" required></div><div class="field"><label>Fin</label><input type="date" name="end_date" required></div><div class="field"><label>Horas previstas</label><input type="number" name="planned_hours" min="0.01" max="2000" step="0.01" required></div><div class="field"><label>Horario y calendario previsto</label><textarea name="schedule" required maxlength="4000"></textarea></div>${[['convenio','Convenio'],['plan','Plan formativo'],['prl','Acreditación de competencias PRL'],['anexo_v','Anexo V o constancia de aplicabilidad'],['edad','Comprobación de edad'],['incorporacion','Autorización o constancia documental de incorporación']].map(([k,l])=>input(k,l)).join('')}<button type="submit" class="btn">Registrar estancia</button></form>`:''}</section>
  <section class="panel"><h2>Estancias registradas</h2><form id="feoe-select"><select name="stay_id">${opt(info.stays,S.feoeStay,x=>x.student_name+' · '+x.company_name+' · '+x.start_date)}</select><button type="submit" class="btn secondary">Abrir estancia</button></form></section>${feoeDetail(info)}`;
 }
+function syncMode(){
+ $('#advanced-nav').hidden=!S.advanced;
+ const toggle=$('#toggle-advanced');toggle.textContent=S.advanced?'Cambiar a modo guiado':'Cambiar a modo avanzado';
+ toggle.setAttribute('aria-expanded',String(S.advanced));
+ document.body.classList.toggle('advanced-mode',S.advanced);
+}
 async function viewHome(){
  await listModules();
- const hasModule=S.modules.length>0;
  const selected=S.modules.find(m=>Number(m.id)===Number(S.moduleId))||S.modules[0];
- if(selected&&!S.moduleId)S.moduleId=selected.id;
- const cards=[
- ['preparar','▤','Preparar mi módulo','Importar una programación, crear un borrador o configurar RA y CE.'],
- ['examenes','✎','Crear una prueba','Generar un examen o utilizar tus propias preguntas.'],
- ['entregas','▧','Corregir trabajos','Cargar PDF o fotografías y revisar propuestas de corrección.'],
- ['evaluacion','▥','Ver la evaluación','Consultar notas por RA y CE y preparar exportaciones.'],
- ['decisiones','✓','Comprobar decisiones académicas','Promoción, permanencia, acceso a empresa y titulación.'],
- ['expediente','▤','Expediente académico','Cierres, antecedentes y acuerdos del ciclo.'],
- ['feoe','▣','Formación en empresa','Empresas, planes, asistencia y valoración de RA.']];
- $('#main').innerHTML=`<div class="welcome-card"><p class="welcome-kicker">ADMINISTRACIÓN Y GESTIÓN · CANARIAS</p>
- <h2>${hasModule?'¿Qué necesitas hacer hoy?':'Prepara tu primer módulo en unos pasos'}</h2>
- <p>${hasModule?'Selecciona una tarea. EvalúaFP conserva los documentos y las calificaciones en tu equipo.':'Puedes incorporar tu programación actual, crear un borrador editable o configurar solo la evaluación. No necesitas adaptar previamente tu documento a una plantilla.'}</p>
- ${selected?`<div class="welcome-module"><strong>Tu módulo:</strong> ${E(selected.name)} · ${E(selected.academic_year)}</div>`:''}
- </div><div class="task-grid">${cards.map(([key,icon,title,description],i)=>`<button type="button" class="task-card" data-page="${key}"><span class="task-icon">${icon}</span><strong>${title}</strong><span>${description}</span><span class="task-action">${!hasModule&&i>0?'Primero, prepara un módulo':'Acceder →'}</span></button>`).join('')}</div>
- <section class="panel" style="margin-top:20px"><h2>Cómo funciona</h2><p>① Prepara tu módulo → ② Crea actividades → ③ Registra y corrige entregas → ④ Valida las notas.</p>
- <p class="small">La inteligencia artificial ayuda a crear y corregir propuestas. La decisión sobre currículo y calificaciones corresponde siempre al docente.</p></section>`;
+ S.moduleId=selected?.id||null;
+ const tasks=[['preparar','1','Preparar el módulo','Configurar currículo, programación y criterios.'],['examenes','2','Crear una prueba','Preparar actividades, exámenes y rúbricas.'],['entregas','3','Recoger trabajos','Registrar entregas para revisar.'],['correcciones','4','Corregir trabajos','Revisar y validar las correcciones.'],['evaluacion','5','Consultar el cuaderno','Registrar calificaciones y consultar el progreso.']];
+ const advanced=[['feoe','Formación en empresa'],['expediente','Expediente académico'],['decisiones','Decisiones académicas'],['programaciones','Editar RA, CE y pesos'],['ajustes','IA, almacenamiento y copias']];
+ $('#main').innerHTML=`<section class="welcome-card compact-welcome"><p class="welcome-kicker">ADMINISTRACIÓN Y GESTIÓN · CANARIAS</p><h2>${selected?'¿Qué necesitas hacer hoy?':'Empieza por preparar tu primer módulo'}</h2><p>${selected?'Selecciona el módulo y la tarea. Los datos se guardan localmente.':'Puedes importar una programación o crear un borrador guiado.'}</p><div class="welcome-module">Modo ${S.advanced?'avanzado':'guiado'}</div></section>
+ ${selected?`<section class="panel home-context"><form id="home-context" class="formrow"><div class="field grow"><label for="home-module">Módulo de trabajo</label><select name="module_id" id="home-module">${opt(S.modules,selected.id,m=>m.name+' · '+m.group_name+' · '+m.academic_year)}</select></div><button type="submit" class="btn secondary">Seleccionar</button></form><p class="small">${E(selected.cycle)} · ${E(selected.territory)}</p></section>`:''}
+ <section class="panel home-workflow"><h2>Tu trabajo paso a paso</h2>${tasks.map(([page,step,title,description],i)=>`<button type="button" class="workflow-task" data-action="home-task" data-target="${page}"><span class="workflow-number">${step}</span><span class="workflow-text"><strong>${E(title)}</strong><small>${E(description)}</small></span><span class="workflow-arrow">›</span></button>`).join('')}</section>
+ ${S.advanced?`<section class="panel"><h2>Herramientas avanzadas</h2><div class="advanced-grid">${advanced.map(([page,title])=>`<button type="button" class="btn secondary" data-page="${page}">${E(title)}</button>`).join('')}</div></section>`:`<section class="panel"><h2>¿Necesitas otras herramientas?</h2><p class="small">Formación en empresa, expediente, decisiones y configuración están disponibles en modo avanzado.</p><button type="button" class="btn secondary" data-action="home-advanced">Abrir herramientas avanzadas</button></section>`}
+ <p class="small">Las propuestas de IA y los cálculos requieren revisión del docente. No se modifica ninguna calificación por cambiar de modo.</p>`;
 }
 /* 1.1 — Preparación curricular sin JSON ni decisiones automáticas no confirmadas. */
 const TERRITORY_NAMES=['Canarias'];
@@ -1638,6 +1637,14 @@ function downloadText(value,name,mime){const url=URL.createObjectURL(new Blob([v
 function formObject(form){return Object.fromEntries(new FormData(form).entries());}
 async function doSubmit(form){
  const id=form.id;
+ if(id==='home-context'){
+   const mid=Number(form.elements.module_id.value);
+   if(!S.modules.some(m=>Number(m.id)===mid))throw Error('Seleccione un módulo disponible.');
+   S.moduleId=mid;S.evaluationModuleId=mid;S.examModuleId=mid;S.evalInstrumentId=null;
+   S.preparePath=null;S.wizardDraft=null;S.proposal=null;S.autoProposedModuleId=null;
+   S.cycleRecordRoster=null;S.cycleRecordReport=null;S.feoeRoster=null;S.feoeStay=null;
+   await page('inicio');return;
+ }
  if(id==='prepare-create'){
    const result=await busy(()=>API('/api/modules','POST',formObject(form)),'Módulo creado.');
    if(result){S.moduleId=result.id;S.autoProposedModuleId=null;S.creatingModule=false;S.wizardDraft=null;S.preparePath=null;await page('preparar');}return;
@@ -2004,10 +2011,9 @@ document.addEventListener('change',async event=>{
  }catch(error){if(error?.message?.includes('canceló al cambiar de pantalla'))return;console.error(error);toast(error?.message||'Error al actualizar la selección.',true);}
 });
 document.querySelector('#toggle-advanced')?.addEventListener('click',()=>{
- S.advanced=!S.advanced;
- $('#advanced-nav').hidden=!S.advanced;
- $('#toggle-advanced').textContent=S.advanced?'Ocultar opciones avanzadas':'Mostrar opciones avanzadas';
- $('#toggle-advanced').setAttribute('aria-expanded',String(S.advanced));
+ S.advanced=!S.advanced;syncMode();
+ // No reconstruir los formularios en uso; se aplica al abrir la siguiente vista.
+ if(S.page==='inicio')page('inicio');
 });
 document.addEventListener('click',async event=>{
  try {
@@ -2015,6 +2021,23 @@ document.addEventListener('click',async event=>{
  if(event.target.id==='large-page'){event.target.classList.toggle('zoom');return;}
  const el=event.target.closest('[data-action]');if(!el)return;
  const action=el.dataset.action;const id=Number(el.dataset.id);const index=Number(el.dataset.index);
+ if(action==='home-advanced'){S.advanced=true;syncMode();await page('inicio');return;}
+ if(action==='home-task'){
+   const destination=el.dataset.target;
+   if(!S.moduleId&&destination!=='preparar'){await page('preparar');return;}
+   if(destination==='evaluacion'||destination==='examenes'){
+     const mid=Number(S.moduleId);
+     const scope=await API('/api/common-scopes/draft?module_id='+mid);
+     if(S.page!=='inicio'||Number(S.moduleId)!==mid)return;
+     if(scope.profile){
+       S.scopeNotebookModule=destination==='evaluacion'?mid:null;S.scopeConsolidationModule=null;
+       await page('preparar');return;
+     }
+     if(destination==='evaluacion'){S.evaluationModuleId=mid;S.evalInstrumentId=null;}
+     else S.examModuleId=mid;
+   }
+   await page(destination);return;
+ }
  if(action==='boe-monitor-check'){
    const boe_id=el.dataset.boeId||$('#monitor-boe-id')?.value.trim()||'';
    if(!boe_id){toast('Introduzca un identificador del BOE.',true);return;}
