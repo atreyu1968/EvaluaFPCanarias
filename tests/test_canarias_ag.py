@@ -1,6 +1,8 @@
 """Pruebas del ámbito cerrado Canarias · Administración y Gestión."""
 import unittest
 import canarias_ag as ag
+import sqlite3
+import general_calendar_library
 
 
 class CanaryAdminScopeTests(unittest.TestCase):
@@ -29,6 +31,16 @@ class CanaryAdminScopeTests(unittest.TestCase):
         for name in ("CFGS Automoción", "Técnico en Farmacia", "", "CFGM Gestión Comercial"):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 ag.canonical_cycle(name)
+
+    def test_general_calendar_migration_is_idempotent(self):
+        with sqlite3.connect(":memory:") as db:
+            general_calendar_library.migrate(db)
+            general_calendar_library.migrate(db)
+            row = db.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='national_general_fp_calendars'"
+            ).fetchone()
+            self.assertIsNotNone(row)
 
     def test_no_unverified_curriculum_data(self):
         catalog = ag.public_catalog()
