@@ -1118,6 +1118,9 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError('Tipo de fuente curricular no reconocido.')
                 data.log(d,'official_curriculum_consulted','module',mid,
                          {'source_url':proposal['source_url'],'source_id':proposal['source_id'],
+                          'source_sha256':proposal.get('source_sha256'),
+                          'source_annex':proposal.get('source_annex'),
+                          'module_code':proposal.get('module_code'),
                           'consulted_at':proposal['consulted_at'],
                           'outcomes':len(proposal['outcomes'])})
             return self.send(proposal)
@@ -1188,14 +1191,53 @@ class Handler(BaseHTTPRequestHandler):
         if path=='/api/programmings/apply':
             mid=int(body['module_id']);out=body.get('outcomes',[])
             with data.connect() as d:
-                must_row(d,'SELECT id FROM modules WHERE id=?',(mid,))
+                module=must_row(d,'SELECT id,name,cycle,territory FROM modules WHERE id=?',(mid,))
+                source=str(body.get('source_url') or '')
+                consulted_at=body.get('consulted_at')
+                regional=None
+                provenance={}
+                if source:
+                    import canarias_curriculum as cc
+                    import curriculum_official as co
+                    if source==cc.SOURCE_URL:
+                        regional=cc.hint(module['name'],module['cycle'])
+                        if not regional or module['territory']!='Canarias':
+                            raise ValueError('Esta fuente canaria no corresponde al módulo y territorio seleccionados.')
+                        # La consulta previa debe estar registrada por el servidor para este módulo.
+                        # No se acepta una huella ni un anexo declarados únicamente por el cliente.
+                        for row in d.execute("""SELECT details_json FROM audit_log
+                            WHERE action='official_curriculum_consulted' AND entity='module'
+                            AND entity_id=? ORDER BY rowid DESC""",(mid,)):
+                            entry=json.loads(row['details_json'])
+                            if (entry.get('source_url')==source and entry.get('consulted_at')==consulted_at
+                                and entry.get('source_id')==regional['source_id']
+                                and entry.get('source_annex')==regional['source_annex']
+                                and entry.get('module_code')==regional['module_code']
+                                and entry.get('source_sha256')):
+                                provenance=entry
+                                break
+                        if not provenance:
+                            raise ValueError('Vuelva a consultar el currículo canario antes de confirmarlo.')
+                        record=cc.REGISTRY[(co._cycle_key(module['cycle']),co._module_key(module['name']))]
+                        co.check_coverage(out,record[3])
+                    elif not source.startswith('https://www.boe.es/diario_boe/txt.php?id=') or not co.BOE_PATTERN.fullmatch(source.split('=',1)[1]):
+                        raise ValueError('La referencia debe pertenecer al BOE o al BOC curricular autorizado.')
                 count=apply_extraction(d,mid,out)
-                if body.get('source_url'):
-                    source=str(body['source_url'])
-                    if not source.startswith(('https://www.boe.es/diario_boe/txt.php?id=BOE-A-',)):
-                        raise ValueError('La referencia de la fuente debe pertenecer al BOE.')
+                if source:
+                    if regional:
+                        draft=program_builder.load(d,mid)['draft']
+                        draft['curriculum_source_url']=source
+                        draft['curriculum_source_description']=(regional['source_title']+' · Anexo '+
+                            regional['source_annex']+' · Consulta '+str(consulted_at)+
+                            ' · SHA-256 '+provenance['source_sha256'])
+                        if regional['module_code']:
+                            draft['official_module_code']=regional['module_code']
+                        # La incorporación de una propuesta no acredita por sí sola
+                        # que no existan otros RA/CE previos ni confirma el horario.
+                        draft['curriculum_confirmed']=False
+                        program_builder.save(d,mid,draft)
                     data.log(d,'official_curriculum_approved_by_teacher','module',mid,
-                        {'source_url':source,'consulted_at':body.get('consulted_at'),
+                        {**provenance,'source_url':source,'consulted_at':consulted_at,
                          'teacher_approved':True,'criteria_saved':count})
             return self.send({'ok':True,'criteria_saved':count})
         if path=='/api/exams/generate':
