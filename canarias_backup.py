@@ -209,6 +209,32 @@ def restore(path,destination):
         raise
 
 
+def list_archives(backup_dir):
+    """Solo copias ZIP ordinarias creadas por la aplicación."""
+    root=Path(backup_dir).resolve()
+    result=[]
+    for p in root.glob('copia_evaluafp_*.zip'):
+        if safe_file(p,root) and re.fullmatch(r'copia_evaluafp_\d{8}_\d{6}(?:_[0-9a-f]{8})?\.zip',p.name):
+            info=p.stat()
+            result.append({'name':p.name,'size':info.st_size,'modified_at':datetime.fromtimestamp(
+                info.st_mtime,timezone.utc).isoformat()})
+    return sorted(result,key=lambda v:v['modified_at'],reverse=True)
+
+
+def recover_archive(backup_dir,data_dir,name,confirmed=False):
+    if confirmed is not True:
+        raise ValueError('Confirme la recuperación aislada sin activar los datos.')
+    if not isinstance(name,str) or name not in {x['name'] for x in list_archives(backup_dir)}:
+        raise ValueError('Seleccione una copia local de la lista.')
+    data_dir=Path(data_dir).resolve()
+    source=Path(backup_dir).resolve()/name
+    if not safe_file(source,Path(backup_dir)):
+        raise ValueError('Copia local no válida.')
+    candidate=data_dir.parent/(data_dir.name+'_Recuperada_'+uuid.uuid4().hex[:12])
+    dest=restore(source,candidate)
+    return {'path':str(dest),'active_data_unchanged':True,'restart_required_for_activation':True}
+
+
 if __name__=='__main__':
     import argparse
     parser=argparse.ArgumentParser(description='Verificar o recuperar copia EvaluaFP Canarias a una carpeta nueva.')
