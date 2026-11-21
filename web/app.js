@@ -1104,9 +1104,23 @@ async function viewPrepare(){
  <input type="hidden" name="reference_course"><input type="hidden" name="reference_code">
  <input type="hidden" name="catalog_entry_id"><p class="small" data-catalog-selection></p>
  <button class="btn" type="submit">Crear módulo y continuar</button></form></section>${catalogPanel()}`;return;}
- const scope=await API('/api/common-scopes/draft?module_id='+Number(S.moduleId));
+ const mid=Number(S.moduleId);
+ const scope=await API('/api/common-scopes/draft?module_id='+mid);
  if(scope.profile){
-   $('#main').innerHTML=`<section class="guide-context"><div class="field"><label>Materia que estás preparando</label><select id="prepare-module">${opt(S.modules,S.moduleId,m=>m.name+' · '+m.academic_year)}</select></div><button type="button" class="btn secondary" data-action="prepare-new-module">+ Nuevo módulo</button></section>`+(S.scopeNotebookModule===Number(S.moduleId)?(S.scopeConsolidationModule===Number(S.moduleId)?scopeConsolidationMarkup(await API('/api/common-scopes/consolidation?module_id='+Number(S.moduleId)+'&session='+encodeURIComponent(S.scopeSession||'ordinaria'))):scopeNotebookMarkup(await API('/api/common-scopes/notebook?module_id='+Number(S.moduleId)))+scopeRecoveryMarkup(await API('/api/common-scopes/notebook?module_id='+Number(S.moduleId)),await API('/api/common-scopes/recovery?module_id='+Number(S.moduleId)))):`<section class="panel"><button class="btn" data-action="scope-open-notebook">Abrir cuaderno de evaluación competencial</button></section>`+commonScopeMarkup(scope));
+   let markup;
+   if(S.scopeNotebookModule===mid){
+     if(S.scopeConsolidationModule===mid){
+       markup=scopeConsolidationMarkup(await API('/api/common-scopes/consolidation?module_id='+mid+'&session='+encodeURIComponent(S.scopeSession||'ordinaria')));
+     }else{
+       const [book,recovery]=await Promise.all([API('/api/common-scopes/notebook?module_id='+mid),API('/api/common-scopes/recovery?module_id='+mid)]);
+       if(S.page!=='preparar'||Number(S.moduleId)!==mid)return;
+       markup=scopeNotebookMarkup(book)+scopeRecoveryMarkup(book,recovery);
+     }
+   }else{
+     markup=`<section class="panel"><button class="btn" data-action="scope-open-notebook">Abrir cuaderno de evaluación competencial</button></section>`+commonScopeMarkup(scope);
+   }
+   if(S.page!=='preparar'||Number(S.moduleId)!==mid)return;
+   $('#main').innerHTML=`<section class="guide-context"><div class="field"><label>Materia que estás preparando</label><select id="prepare-module">${opt(S.modules,mid,m=>m.name+' · '+m.academic_year)}</select></div><button type="button" class="btn secondary" data-action="prepare-new-module">+ Nuevo módulo</button></section>`+markup;
    return;
  }
  const info=await API('/api/programming-builder/'+Number(S.moduleId));S.prepareInfo=info;
