@@ -1519,7 +1519,11 @@ function renderReview(item){
 async function viewEvaluation(){
  const [modules]=await Promise.all([listModules(),listExams()]);
  if(!modules.length){$('#main').innerHTML=empty('Primero cree un módulo desde Programaciones.');return;}
- S.evaluationModuleId=S.evaluationModuleId||S.moduleId||modules[0].id;
+ S.evaluationModuleId=modules.some(m=>Number(m.id)===Number(S.evaluationModuleId))?Number(S.evaluationModuleId):Number(S.moduleId||modules[0].id);
+ const scope=await API('/api/common-scopes/draft?module_id='+S.evaluationModuleId);
+ if(scope.profile){
+   $('#main').innerHTML=`<section class="panel"><div class="field"><label>Selecciona módulo o materia</label><select id="evaluation-module">${opt(modules,S.evaluationModuleId,m=>m.name+' · '+m.academic_year)}</select></div><h2>Evaluación competencial del ámbito</h2><p>Esta materia utiliza competencias específicas, no el cuaderno de RA y CE profesionales.</p><button type="button" class="btn" data-action="eval-scope-notebook">Abrir cuaderno competencial</button></section>`;return;
+ }
  const x=await API('/api/evaluation?module_id='+encodeURIComponent(S.evaluationModuleId));S.evalData=x;
  const students=x.students||[],criteria=x.criteria||[],units=x.units||[],instruments=x.instruments||[],policy=x.settings;
  const feoeEvidence=(await API('/api/feoe/module-evidence?module_id='+Number(S.evaluationModuleId))).evidence;
@@ -1530,10 +1534,10 @@ async function viewEvaluation(){
  $('#main').innerHTML=`${intro('Cuaderno de evaluación por unidades, trimestres, RA y CE. Integra correcciones validadas de exámenes, calificaciones manuales y notas importadas desde CSV. Ninguna nota final se publica si las ponderaciones o evidencias son incompletas.')}
  <section class="panel"><div class="formrow"><div class="field grow"><label>Módulo profesional</label><select id="evaluation-module">${opt(modules,S.evaluationModuleId,m=>m.name+' · '+m.academic_year)}</select></div><span class="badge">${students.length} alumnos · ${units.length} unidades · ${instruments.length} instrumentos</span></div></section>
  ${x.warnings.length?`<section class="hint warning"><strong>Incidencias que impiden calcular una calificación definitiva</strong><ul>${x.warnings.map(w=>`<li>${E(w)}</li>`).join('')}</ul></section>`:''}
- <section class="panel"><h2>Evidencias cualitativas FEOE del módulo</h2><p>Consulta las valoraciones del tutor de empresa y las revisiones del profesorado. No se convierten automáticamente en notas.</p><button type="button" class="btn secondary" data-page="feoe">Abrir seguimiento FEOE</button>
- ${feoeEvidence.length?`<div class="table-wrap"><table><thead><tr><th>Alumno</th><th>RA / CE</th><th>Empresa</th><th>Valoración</th><th>Revisión docente</th></tr></thead><tbody>${feoeEvidence.map(r=>`<tr><td>${E(r.student_name)}</td><td>${E(r.ra_code)} · ${E(r.criterion_codes.join(', '))}${r.current_curriculum?'':' · Currículo modificado'}</td><td>${E(r.company_name)}</td><td>${E(r.valuation?.status||'Pendiente')} · ${E(r.valuation?.observations||'')}</td><td>${E(r.teacher_review?.notes||'Pendiente de revisión')}</td></tr>`).join('')}</tbody></table></div>`:empty('Sin evidencias de empresa vinculadas a planes confirmados.')}</section>
- <section class="panel"><h2>1. Criterios de calificación y tratamiento de la formación en empresa</h2>
- <p class="small">La programación de ejemplo indica cinco RA al 20 % y un 25 % adicional de empresa: esto suma 125 %. Debe validarse una interpretación o corregirse formalmente la programación. Esta pantalla nunca modifica automáticamente los pesos originales.</p>
+ <details class="eval-section" ${S.advanced||feoeEvidence.length?'open':''}><summary>Formación en empresa <small>${feoeEvidence.length} evidencias</small></summary><section class="panel"><h2>Evidencias cualitativas FEOE del módulo</h2><p>Consulta las valoraciones del tutor de empresa y las revisiones del profesorado. No se convierten automáticamente en notas.</p><button type="button" class="btn secondary" data-page="feoe">Abrir seguimiento FEOE</button>
+ ${feoeEvidence.length?`<div class="table-wrap"><table><thead><tr><th>Alumno</th><th>RA / CE</th><th>Empresa</th><th>Valoración</th><th>Revisión docente</th></tr></thead><tbody>${feoeEvidence.map(r=>`<tr><td>${E(r.student_name)}</td><td>${E(r.ra_code)} · ${E(r.criterion_codes.join(', '))}${r.current_curriculum?'':' · Currículo modificado'}</td><td>${E(r.company_name)}</td><td>${E(r.valuation?.status||'Pendiente')} · ${E(r.valuation?.observations||'')}</td><td>${E(r.teacher_review?.notes||'Pendiente de revisión')}</td></tr>`).join('')}</tbody></table></div>`:empty('Sin evidencias de empresa vinculadas a planes confirmados.')}</section></details>
+ <details class="eval-section" ${S.advanced||!policy.validated?'open':''}><summary>1. Configurar criterios de calificación <small>${policy.validated?'Política validada':'Pendiente de validar'}</small></summary><section class="panel"><h2>Criterios de calificación y tratamiento de la formación en empresa</h2>
+ <p class="small">Comprueba la programación de este módulo y valida una política coherente. La aplicación no modifica automáticamente los pesos originales.</p>
  <form id="eval-policy"><div class="formgrid"><div class="field"><label>Tratamiento de empresa</label><select name="enterprise_mode">
  <option value="unresolved" ${policy.enterprise_mode==='unresolved'?'selected':''}>Pendiente de aclarar</option>
  <option value="integrated" ${policy.enterprise_mode==='integrated'?'selected':''}>Evidencias de empresa integradas en RA</option>
@@ -1543,8 +1547,8 @@ async function viewEvaluation(){
  <div class="field"><label>% mínimo de CE superados para RA</label><input name="ra_min_criteria_pct" type="number" min="0" max="100" step="1" value="${E(policy.ra_min_criteria_pct)}"></div></div>
  <div class="field"><label>Justificación de la interpretación adoptada</label><textarea name="teacher_note" placeholder="Acuerdo o modificación de programación revisada por el equipo docente">${E(policy.teacher_note)}</textarea></div>
  <label><input name="validated" type="checkbox" ${policy.validated?'checked':''}> Confirmo, como docente, esta política de cálculo</label>
- <div class="actions"><button class="btn" type="submit">Guardar política</button></div></form></section>
- <div class="grid2"><section class="panel"><h2>2. Unidades de evaluación</h2>
+ <div class="actions"><button class="btn" type="submit">Guardar política</button></div></form></section></details>
+ <details class="eval-section" ${S.advanced||!instruments.length?'open':''}><summary>2. Preparar unidades e instrumentos <small>${units.length} unidades · ${instruments.length} instrumentos</small></summary><div class="grid2"><section class="panel"><h2>Unidades de evaluación</h2>
  <form id="eval-unit"><div class="formgrid"><div class="field"><label>Código</label><input name="code" required placeholder="UD01"></div>
  <div class="field"><label>Unidad / situación de aprendizaje</label><input name="title" required placeholder="Diario y mayor"></div>
  <div class="field"><label>Trimestre</label><select name="term"><option value="1">1.ª evaluación</option><option value="2">2.ª evaluación</option><option value="3">3.ª evaluación</option></select></div></div>
@@ -1560,11 +1564,11 @@ async function viewEvaluation(){
  <div class="section-title">CE evaluados y peso de este instrumento dentro de cada CE</div>
  <div class="eval-scroll">${options||empty('Primero configure los criterios.')}</div>
  <p class="small">Los porcentajes de todos los instrumentos de un mismo CE deben sumar 100 %. P. ej., prueba escrita 60 %, portfolio 40 %.</p>
- <button class="btn secondary" type="submit">Crear instrumento</button></form></section></div>
- <section class="panel"><h2>4. Libro de notas e importaciones</h2>
+ <button class="btn secondary" type="submit">Crear instrumento</button></form></section></div></details>
+ <section class="panel"><h2>3. Registrar notas</h2>
  ${instruments.length?`<div class="field" style="max-width:600px"><label>Instrumento a calificar</label><select id="eval-instrument-select">${opt(instruments,S.evalInstrumentId||instruments[0].id,i=>i.term+'ª · '+i.title+' ('+i.kind+')')}</select></div>`:empty('Cree un instrumento para introducir calificaciones.')}
  <div id="eval-scores"></div></section>
- <section class="panel"><h2>5. Resultados por evaluación, RA y CE</h2>
+ <section class="panel"><h2>4. Revisar y validar resultados</h2>
  <p class="small">Las notas trimestrales son instantáneas provisionales de los instrumentos de cada período; las notas finales requieren evidencias completas, pesos correctos y validación de la política.</p>
  <div class="table-wrap"><table><thead><tr><th>Alumno/a</th><th>1.ª</th><th>2.ª</th><th>3.ª</th><th>RA</th><th>Nota final calculable</th></tr></thead><tbody>${students.map(st=>`<tr><td><b>${E(st.name)}</b><div class="small">${E(st.code)}</div></td>
  ${st.terms.map(t=>`<td>${t.score??'—'} <small>${t.completed}/${t.expected}</small></td>`).join('')}
@@ -1574,7 +1578,7 @@ async function viewEvaluation(){
  st.final_score===null?'<span class="badge orange">Pendiente</span>':`<strong>${st.final_score} / 10</strong><div class="small">Antes del cierre docente</div>`}
  <div class="actions"><a class="btn smallbtn secondary" href="/api/evaluation/${S.evaluationModuleId}/student/${st.student_id}.pdf">Informe PDF</a>
  ${st.final_score!==null?`<button type="button" class="btn smallbtn" data-action="eval-close" data-id="${st.student_id}">Validar cierre</button>`:''}</div></td></tr>`).join('')}</tbody></table></div>
- <div class="actions" style="flex-wrap:wrap"><button class="btn secondary" data-action="export-evaluation" type="button">Resultados CSV</button>
+ <details class="eval-section" ${S.advanced?'open':''}><summary>Exportar informes y conectar con Additio</summary><div class="actions" style="flex-wrap:wrap"><button class="btn secondary" data-action="export-evaluation" type="button">Resultados CSV</button>
  <a class="btn secondary" href="/api/evaluation/${S.evaluationModuleId}/export/xlsx">Excel completo (.xlsx)</a>
  <a class="btn secondary" href="/api/evaluation/${S.evaluationModuleId}/export/xls">Excel clásico (.xls)</a>
  <a class="btn secondary" href="/api/evaluation/${S.evaluationModuleId}/export/additio-alumnos.xlsx">Additio: importar grupo Excel</a>
@@ -1588,8 +1592,8 @@ async function viewEvaluation(){
  <a class="btn secondary" href="/api/evaluation/${S.evaluationModuleId}/export/additio-seguimiento.csv">RA/CE seguimiento provisional CSV</a>
  <a class="btn secondary" href="/api/evaluation/${S.evaluationModuleId}/export/additio-estado.csv">Estado de validación (separado)</a>
  <a class="btn secondary" href="/api/evaluation/${S.evaluationModuleId}/export/additio-pegar.tsv">Additio: copiar/pegar TSV</a></div>
- <p class="small">Para Additio se exportan exclusivamente las calificaciones curriculares RA/CE, sin columnas de exámenes, portfolios ni instrumentos. El paquete de configuración contiene el listado de RA (alta revisada por docente), los CE en el formato de una columna y una tabla de ponderaciones. Las notas definitivas solo se exportan con cierre docente vigente; el archivo de seguimiento provisional está identificado por separado. Compruebe el orden de alumnos y los códigos en Additio antes de trasladar las calificaciones.</p></section>`;
- S.evalInstrumentId=S.evalInstrumentId||instruments[0]?.id||null;
+ <p class="small">Para Additio se exportan exclusivamente las calificaciones curriculares RA/CE, sin columnas de exámenes, portfolios ni instrumentos. El paquete de configuración contiene el listado de RA (alta revisada por docente), los CE en el formato de una columna y una tabla de ponderaciones. Las notas definitivas solo se exportan con cierre docente vigente; el archivo de seguimiento provisional está identificado por separado. Compruebe el orden de alumnos y los códigos en Additio antes de trasladar las calificaciones.</p></details></section>`;
+ S.evalInstrumentId=instruments.some(i=>Number(i.id)===Number(S.evalInstrumentId))?Number(S.evalInstrumentId):instruments[0]?.id||null;
  renderEvalScores();
 }
 function renderEvalScores(){
@@ -2021,6 +2025,7 @@ document.addEventListener('click',async event=>{
  if(event.target.id==='large-page'){event.target.classList.toggle('zoom');return;}
  const el=event.target.closest('[data-action]');if(!el)return;
  const action=el.dataset.action;const id=Number(el.dataset.id);const index=Number(el.dataset.index);
+ if(action==='eval-scope-notebook'){S.moduleId=Number(S.evaluationModuleId);S.scopeNotebookModule=S.moduleId;S.scopeConsolidationModule=null;await page('preparar');return;}
  if(action==='home-advanced'){S.advanced=true;syncMode();await page('inicio');return;}
  if(action==='home-task'){
    const destination=el.dataset.target;
