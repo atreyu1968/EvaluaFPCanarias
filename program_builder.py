@@ -354,7 +354,9 @@ def diagnose(db, module_id):
             'los módulos ni la carga horaria vigente para este curso.'
         )
     import curriculum_official
-    return {'curriculum_source_hint': curriculum_official.source_hint(module['name'], module['cycle']),
+    import canarias_curriculum
+    return {'canarias_curriculum_hint': canarias_curriculum.hint(module['name'], module['cycle']),
+            'curriculum_source_hint': curriculum_official.source_hint(module['name'], module['cycle']),
             'module_reference': module_reference,
             'calendar_plan': calendar_plan, 'hours_reference': hours_reference,
             'module': dict(module), 'draft': draft, 'updated_at': loaded['updated_at'],

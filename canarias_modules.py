@@ -60,7 +60,7 @@ _AD = _GS_COMMON + (
     ("0664", "Proyecto intermodular de asistencia a la dirección", 2, 64, 2),
 )
 
-BASIC_SOURCE_URL = "https://www3.gobiernodecanarias.org/medusa/proyecto/38001553-0006/wp-content/uploads/sites/1326/2024/11/anexo-5-resolucion-instrucciones-implantacion-distribucion-horaria-curriculos-24.pdf"
+BASIC_SOURCE_URL = "https://www.gobiernodecanarias.org/cmsgob1/export/sites/educacion/web/_galerias/descargas/otros/anexo-5-resolucion-instrucciones-implantacion-distribucion-horaria-curriculos-24.pdf"
 BASIC_SOURCE_TITLE = "BOC 2024/226, anexo V: distribución de CFGB Servicios Administrativos"
 # Tutoría no se indexa como módulo con RA/CE. Las materias sin código RD
 # figuran con code=None, conservando curso y ámbito para diferenciarlas.

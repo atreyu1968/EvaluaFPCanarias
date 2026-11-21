@@ -1106,9 +1106,16 @@ class Handler(BaseHTTPRequestHandler):
             mid=int(body['module_id'])
             with data.connect() as d:
                 module=must_row(d,'SELECT name,cycle FROM modules WHERE id=?',(mid,))
-                proposal=curriculum_official.fetch_official(module['name'],body.get('boe_id'),
-                      consent=body.get('authorize_official_query') is True,
-                      cycle=module['cycle'])
+                if body.get('source_kind') == 'BOC':
+                    import canarias_curriculum
+                    proposal=canarias_curriculum.fetch(module['name'],module['cycle'],
+                          consent=body.get('authorize_official_query') is True)
+                elif body.get('source_kind') in (None, '', 'BOE'):
+                    proposal=curriculum_official.fetch_official(module['name'],body.get('boe_id'),
+                          consent=body.get('authorize_official_query') is True,
+                          cycle=module['cycle'])
+                else:
+                    raise ValueError('Tipo de fuente curricular no reconocido.')
                 data.log(d,'official_curriculum_consulted','module',mid,
                          {'source_url':proposal['source_url'],'source_id':proposal['source_id'],
                           'consulted_at':proposal['consulted_at'],

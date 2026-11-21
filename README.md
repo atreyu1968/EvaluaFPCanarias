@@ -193,3 +193,7 @@ Se incorporan las referencias de los anexos III y V–X del RD 659/2023, el proy
 | 0664 | proyecto de asistencia a la direccion | 4 | 33 |
 
 Los recuentos corresponden a las publicaciones estatales cotejadas, no a un certificado de currículo vigente en Canarias. La consulta sigue requiriendo conexión y revisión docente.
+
+## Currículos canarios específicos (BOC de 8/05/2025)
+
+En Preparar mi módulo se ofrece una consulta independiente y preferente al BOC para 3159, Prevención y salud laboral (sin código RD), 3160 y 1713. Referencia: Resolución de 25 de abril de 2025, anexos V y VI, [BOC 91, anuncio 1728](https://www.gobiernodecanarias.org/boc/2025/091/1728.html). La versión HTML es informativa: se debe cotejar el PDF firmado. Se verifican nombre, código cuando existe, duración, anexo y secuencia de los 20 RA y 113 CE; la carga horaria no se confirma ni se modifica. El RA5 de 1713 en la fuente autonómica aparece con criterios a), b), c), d); no se renumera el BOE. Se conserva el enlace y la huella de la consulta en la propuesta. El enlace del anexo V de horarios de 2024 apunta ahora directamente a la Consejería. Los ámbitos generales aún requieren su propio modelo de competencias específicas.

@@ -321,8 +321,12 @@ def parse_curriculum(document_text, module_name, expected_code=None):
     if expected_code and code!=expected_code:
         raise ValueError(f'El código de este módulo en la norma es {code}, no {expected_code}.')
     heading=re.search(r'Resultados de aprendizaje y criterios de evaluaci[oó]n',block,re.I)
-    block=block[heading.end():]
-    block=re.split(r'(?im)^[ \t]*(?:Duraci[oó]n\s*:|Contenidos b[aá]sicos\b|Orientaciones pedag[oó]gicas\b)',block,maxsplit=1)[0]
+    return {'outcomes': parse_ra_block(block[heading.end():]), 'module_code': code}
+
+
+def parse_ra_block(block):
+    """Extrae RA y CE del fragmento ya identificado, sin asignar pesos."""
+    block=re.split(r'(?im)^[ \t]*(?:Duraci[oó]n\s*:|Contenidos(?: b[aá]sicos)?\s*[:.]|Orientaciones pedag[oó]gicas\b)',block,maxsplit=1)[0]
     lines=[re.sub(r'\s+',' ',x.strip()) for x in block.splitlines()]
     # La publicación utiliza indistintamente punto, dos puntos o ninguno.
     lines=[x for x in lines if x and _norm(x).strip(' .:') != 'criterios de evaluacion']
@@ -342,7 +346,7 @@ def parse_curriculum(document_text, module_name, expected_code=None):
             current['criteria'].append(criterion);continue
         if criterion and current and not line.lower().startswith(('módulo profesional','resultados de aprendizaje')):
             # Las líneas partidas por maquetación pertenecen al mismo criterio.
-            if len(line)>12 and not re.match(r'^[—−-]',line):
+            if line and line not in ('.', ':'):
                 criterion['description']+=' '+line
         elif current and not criterion and len(line)>12 and len(current['description'])<250:
             current['description']+=' '+line
@@ -351,7 +355,7 @@ def parse_curriculum(document_text, module_name, expected_code=None):
     if len(ras)<2 or sum(len(r['criteria']) for r in ras)<8:
         raise ValueError('El texto obtenido no contiene suficientes RA/CE verificables; consulte la norma original.')
     # No inventamos ponderaciones: son propias de la programación y su política de calificación.
-    return {'outcomes':ras,'module_code':code}
+    return ras
 
 
 def check_coverage(outcomes, expected):

@@ -943,6 +943,7 @@ function guidedProposalMarkup(){
  if(!p)return '';
  if(!Array.isArray(p.outcomes))return `<section class="hint warning">No se han recuperado RA y CE. Revise el documento y la fuente.</section>`;
  return `<section class="panel guide-proposal"><h2>Revisa el currículo propuesto</h2><p>Corrige los enunciados y las ponderaciones antes de incorporarlos. Los campos sin peso expreso recibirán la ponderación automática por CE, salvo que ya exista una decisión docente anterior.</p>
+ ${p.source==='BOC'?`<p class="small">Fuente autonómica: <a href="${E(p.source_url)}" target="_blank" rel="noopener noreferrer">${E(p.source_title)}</a> · Anexo ${E(p.source_annex)} · SHA-256 <code>${E(p.source_sha256)}</code></p>`:''}
  ${(p.warnings||[]).length?`<div class="hint warning"><b>Advertencias:</b><ul>${p.warnings.map(w=>`<li>${E(w)}</li>`).join('')}</ul></div>`:''}
  <form id="guided-review">${p.outcomes.map((ra,i)=>`<section class="guide-ra" data-guide-ra="${i}">
  <div class="formgrid"><div class="field"><label>Código RA</label><input name="ra-code" required value="${E(ra.code)}"></div>
@@ -1036,6 +1037,7 @@ async function viewPrepare(){
  ${curriculumReviewPanel()}
  ${boeDiscoveryPanel()}
  ${todofpExplorerPanel('builder')}
+ ${info.canarias_curriculum_hint?`<div class="guide-review-line"><strong>Currículo autonómico canario disponible</strong><p>${E(info.canarias_curriculum_hint.source_title)} · anexo ${E(info.canarias_curriculum_hint.source_annex)} · ${Number(info.canarias_curriculum_hint.expected_ra)} RA / ${Number(info.canarias_curriculum_hint.expected_ce)} CE.</p><p><a href="${E(info.canarias_curriculum_hint.source_url)}" target="_blank" rel="noopener noreferrer">Abrir el BOC y su PDF firmado</a>. Las horas del documento no se confirman automáticamente.</p><button class="btn" type="button" data-action="guided-boc">Recuperar RA y CE del currículo canario</button></div>`:''}
  ${info.curriculum_source_hint?`<p class="hint"><strong>Fuente estatal localizada:</strong> ${E(info.curriculum_source_hint.boe_id)} · módulo ${E(info.curriculum_source_hint.module_code)} · ${Number(info.curriculum_source_hint.expected_ra)} RA y ${Number(info.curriculum_source_hint.expected_ce)} CE de la publicación original. Comprueba la normativa aplicable al curso antes de confirmar.</p>`:''}
  <div class="field"><label>Identificador del BOE (si lo conoces)</label><input id="guide-boe" placeholder="BOE-A-AAAA-NNN" value="${E(info.curriculum_source_hint?.boe_id||S.boeSelectedId||'')}"></div>
  <div class="actions"><button class="btn" type="button" data-action="guided-boe">Consultar RA y CE en el BOE</button>
@@ -2280,6 +2282,12 @@ document.addEventListener('click',async event=>{
    if(!confirm('Se enviará el texto de la programación al proveedor de IA configurado. No incluya datos personales innecesarios. ¿Autoriza el análisis?'))return;
    const result=await busy(()=>API('/api/programmings/analyze','POST',{programming_id:id}));
    if(result){S.proposal=result;await page('preparar');}return;
+ }
+ if(action==='guided-boc'){
+   if(!confirm('Se consultará el BOC de Canarias. Contraste el PDF firmado y revise los RA y CE antes de guardarlos. ¿Continuar?'))return;
+   const result=await busy(()=>API('/api/curriculum/official','POST',{
+     module_id:Number(S.moduleId),source_kind:'BOC',authorize_official_query:true}));
+   if(result){S.proposal=result;S.preparePath='create';await page('preparar');}return;
  }
  if(action==='guided-boe'){
    const boe=$('#guide-boe')?.value.trim();
