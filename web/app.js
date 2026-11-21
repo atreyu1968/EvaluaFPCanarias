@@ -968,6 +968,18 @@ function guidedReadProposal(form){
    }))
  }));
 }
+function scopeConsolidationMarkup(report){
+ const sessions={trimestre1:'Primer trimestre',trimestre2:'Segundo trimestre',trimestre3:'Tercer trimestre',ordinaria:'Final ordinaria',extraordinaria:'Final extraordinaria'};
+ const grades=['IN','SU','BI','NT','SB'];
+ const gradeOptions=grades.map(g=>`<option value="${g}">${g}</option>`).join('');
+ const rows=report.rows;
+ return `<section class="welcome-card"><p class="welcome-kicker">CFGB · CONSOLIDACIÓN DEL ÁMBITO</p><h2>${E(report.ambito)}</h2><p>${report.course}.º · ${E(report.group)} · ${E(report.academic_year)}</p><button class="btn secondary" type="button" data-action="scope-back-notebook">Volver al cuaderno</button></section>
+ <section class="panel"><h2>Evaluación</h2><form id="scope-select-session" class="formgrid"><div class="field"><label>Periodo</label><select name="session">${Object.entries(sessions).map(([k,v])=>`<option value="${k}" ${k===report.session?'selected':''}>${E(v)}</option>`).join('')}</select></div><button class="btn secondary" type="submit">Consultar</button></form><p><a href="${E(report.source_url)}" target="_blank" rel="noopener noreferrer">Normativa de evaluación de Canarias</a></p><p>Las valoraciones se registran expresamente por materia. La media final no genera automáticamente una calificación oficial.</p>
+ ${Object.entries(report.matches).map(([k,items])=>`<p>${E(k)}: ${items.length===1?E(items[0].name):'Pendiente: materia ausente o duplicada'}</p>`).join('')}</section>
+ ${rows.length?`<section class="panel"><h2>Registrar valoración de esta materia</h2><form id="scope-matter-grade" class="formgrid"><div class="field"><label>Alumno</label><select name="student_id">${opt(rows.map(r=>r.student),null,x=>x.name+' · '+x.code)}</select></div><div class="field"><label>Valoración docente</label><select name="grade">${gradeOptions}</select></div><div class="field"><label>Carga horaria de la materia</label><input type="number" name="hours" min="0.0001" max="1000" step="0.0001" required></div><div class="field"><label>Fuente de las horas (misma unidad en todo el ámbito)</label><input name="hours_source" required maxlength="1000"></div><div class="field"><label>Justificación de la valoración y evidencias</label><textarea name="rationale" required maxlength="4000"></textarea></div><label class="checkbox-card"><input type="checkbox" name="teacher_confirmed" required> Confirmo la valoración y las horas contrastadas.</label><button class="btn" type="submit">Guardar valoración</button></form></section>`:empty('Registra primero el alumnado de esta materia.')}
+ <section class="panel"><h2>Estado del alumnado</h2>${rows.map(r=>`<details><summary>${E(r.student.name)} · ${r.calculation?(r.calculation.passed?'Propuesta: superado':'Propuesta: no superado'):(r.blockers.length?'Pendiente':'Valoraciones trimestrales completas')}</summary><ul>${r.matters.map(m=>`<li>${E(m.module_name)}: ${E(m.grade)} · ${E(m.hours)} horas · ${E(m.hours_source)}</li>`).join('')}${r.blockers.map(b=>`<li>${E(b)}</li>`).join('')}</ul>
+ ${r.calculation?`<p>Media ponderada orientativa: ${Number(r.calculation.mean).toFixed(4)}. La decisión de superación se calcula sin redondear.</p>${r.decision?`<p>Última decisión registrada: ${E(r.decision.grade)} · ${r.decision.current?'Vigente respecto a las valoraciones registradas':'Desactualizada: revisar'} · ${E(r.decision.meeting_ref)}</p>`:''}<form id="scope-team-decision" data-student="${Number(r.student.id)}" data-grade-ids="${E(JSON.stringify(r.matters.map(m=>m.id)))}" class="formgrid"><div class="field"><label>Calificación acordada</label><select name="grade">${(r.calculation.passed?grades.slice(1):['IN']).map(g=>`<option value="${g}">${g}</option>`).join('')}</select></div><div class="field"><label>Referencia de la sesión</label><input name="meeting_ref" required maxlength="500"></div><div class="field"><label>Motivación del acuerdo</label><textarea name="rationale" required maxlength="4000"></textarea></div><label class="checkbox-card"><input type="checkbox" name="team_confirmed" required> He verificado identidad, cargas horarias y acuerdo del equipo docente.</label><button class="btn" type="submit">Registrar acuerdo</button></form>`:''}</details>`).join('')}</section>`;
+}
 function scopeNotebookMarkup(book){
  const students=Object.fromEntries(book.students.map(x=>[x.id,x]));
  const activities=Object.fromEntries(book.activities.map(x=>[x.id,x]));
@@ -976,7 +988,7 @@ function scopeNotebookMarkup(book){
  const usable=book.activities.filter(x=>x.criteria_current);
  const options=usable.map(a=>`<optgroup label="${E(a.title)}">${a.criteria.map(c=>`<option value="${Number(a.id)}|${E(c.code)}">${E(c.code)} · ${E(c.description.slice(0,90))}</option>`).join('')}</optgroup>`).join('');
  const renderEvidence=rows=>rows.length?`<div class="tablewrap"><table><thead><tr><th>Alumno</th><th>Actividad / criterio</th><th>Valoración</th><th>Observación / referencia</th><th>Registro</th></tr></thead><tbody>${rows.map(e=>`<tr><td>${E(students[e.student_id]?.name||'Alumno')}</td><td>${E(activities[e.activity_id]?.title||'Actividad')} · ${E(e.criterion_code)}</td><td>${E(e.level)}</td><td>${E(e.notes)} ${E(e.evidence_ref)}</td><td>${E(e.created_at)}</td></tr>`).join('')}</tbody></table></div>`:empty('Sin evidencias registradas.');
- return `<section class="welcome-card"><p class="welcome-kicker">CFGB · CUADERNO COMPETENCIAL</p><h2>${E(book.profile.ambito)}</h2><p>${E(book.notice)} NE = no evaluado; no equivale a suspenso.</p><button class="btn secondary" data-action="scope-edit-curriculum">Volver al currículo</button></section>
+ return `<section class="welcome-card"><p class="welcome-kicker">CFGB · CUADERNO COMPETENCIAL</p><h2>${E(book.profile.ambito)}</h2><p>${E(book.notice)} NE = no evaluado; no equivale a suspenso.</p><button class="btn secondary" data-action="scope-edit-curriculum">Volver al currículo</button> <button class="btn" data-action="scope-open-consolidation">Consolidar calificaciones del ámbito</button></section>
  <section class="panel"><h2>Alumnado de la materia (${book.students.length})</h2><form id="scope-add-student" class="formgrid"><div class="field"><label>Código</label><input name="code" required maxlength="100"></div><div class="field"><label>Nombre</label><input name="name" required maxlength="250"></div><button type="submit" class="btn secondary">Registrar alumno</button></form>
  ${book.students.length?`<details><summary>Ver alumnado registrado</summary><ul>${book.students.map(x=>`<li>${E(x.name)} · ${E(x.code)}</li>`).join('')}</ul></details>`:''}</section>
  ${!ready?'<p class="hint warning">Confirma primero los criterios del currículo. Las evidencias históricas permanecen visibles, pero se bloquean las nuevas valoraciones.</p>':`<section class="panel"><h2>Nueva actividad evaluable</h2><form id="scope-add-activity" class="formgrid"><div class="field"><label>Título de la actividad</label><input name="title" required maxlength="250"></div><div class="field"><label>Situación de aprendizaje</label><input name="situation" required maxlength="2000"></div><div class="field"><label>Instrumento</label><select name="instrument">${Object.entries(instrumentLabels).map(([k,v])=>`<option value="${k}">${E(v)}</option>`).join('')}</select></div><div class="field"><label>Evaluación</label><select name="term"><option value="1">Primera</option><option value="2">Segunda</option><option value="3">Tercera</option></select></div><div class="field"><label>Fecha</label><input type="date" name="activity_date" required></div><div class="field"><label>Criterios de la actividad</label>${book.criteria.map(c=>`<label class="checkbox-card"><input type="checkbox" name="criterion_codes" value="${E(c.code)}"> ${E(c.code)} · ${E(c.description)}</label>`).join('')}</div><button type="submit" class="btn">Guardar actividad</button></form></section>`}
@@ -1019,7 +1031,7 @@ async function viewPrepare(){
  <button class="btn" type="submit">Crear módulo y continuar</button></form></section>${catalogPanel()}`;return;}
  const scope=await API('/api/common-scopes/draft?module_id='+Number(S.moduleId));
  if(scope.profile){
-   $('#main').innerHTML=`<section class="guide-context"><div class="field"><label>Materia que estás preparando</label><select id="prepare-module">${opt(S.modules,S.moduleId,m=>m.name+' · '+m.academic_year)}</select></div><button type="button" class="btn secondary" data-action="prepare-new-module">+ Nuevo módulo</button></section>`+(S.scopeNotebookModule===Number(S.moduleId)?scopeNotebookMarkup(await API('/api/common-scopes/notebook?module_id='+Number(S.moduleId))):`<section class="panel"><button class="btn" data-action="scope-open-notebook">Abrir cuaderno de evaluación competencial</button></section>`+commonScopeMarkup(scope));
+   $('#main').innerHTML=`<section class="guide-context"><div class="field"><label>Materia que estás preparando</label><select id="prepare-module">${opt(S.modules,S.moduleId,m=>m.name+' · '+m.academic_year)}</select></div><button type="button" class="btn secondary" data-action="prepare-new-module">+ Nuevo módulo</button></section>`+(S.scopeNotebookModule===Number(S.moduleId)?(S.scopeConsolidationModule===Number(S.moduleId)?scopeConsolidationMarkup(await API('/api/common-scopes/consolidation?module_id='+Number(S.moduleId)+'&session='+encodeURIComponent(S.scopeSession||'ordinaria'))):scopeNotebookMarkup(await API('/api/common-scopes/notebook?module_id='+Number(S.moduleId)))):`<section class="panel"><button class="btn" data-action="scope-open-notebook">Abrir cuaderno de evaluación competencial</button></section>`+commonScopeMarkup(scope));
    return;
  }
  const info=await API('/api/programming-builder/'+Number(S.moduleId));S.prepareInfo=info;
@@ -1577,6 +1589,15 @@ async function doSubmit(form){
    }),'Apartados confirmados y conservados en el borrador.');
    if(result){S.importPreview=null;S.wizardDraft=null;S.preparePath='import';await page('preparar');}
    return;
+ }
+ if(id==='scope-select-session'){S.scopeSession=form.elements.session.value;await page('preparar');return;}
+ if(id==='scope-matter-grade'){
+   const b=formObject(form);const result=await busy(()=>API('/api/common-scopes/matter-grade','POST',{module_id:Number(S.moduleId),valuation:{student_id:Number(b.student_id),session:S.scopeSession||'ordinaria',grade:b.grade,hours:b.hours,hours_source:b.hours_source,rationale:b.rationale,teacher_confirmed:form.elements.teacher_confirmed.checked}}),'Valoración docente registrada.');
+   if(result)await page('preparar');return;
+ }
+ if(id==='scope-team-decision'){
+   const b=formObject(form);const result=await busy(()=>API('/api/common-scopes/team-decision','POST',{module_id:Number(S.moduleId),decision:{student_id:Number(form.dataset.student),grade_ids:JSON.parse(form.dataset.gradeIds),session:S.scopeSession||'ordinaria',grade:b.grade,meeting_ref:b.meeting_ref,rationale:b.rationale,team_confirmed:form.elements.team_confirmed.checked}}),'Acuerdo registrado en el historial local.');
+   if(result)await page('preparar');return;
  }
  if(id==='scope-add-student'){
    const b=formObject(form);const result=await busy(()=>API('/api/students','POST',{module_id:Number(S.moduleId),code:b.code,name:b.name}),'Alumno registrado.');
@@ -2353,12 +2374,17 @@ document.addEventListener('click',async event=>{
    const result=await busy(()=>API('/api/programmings/analyze','POST',{programming_id:id}));
    if(result){S.proposal=result;await page('preparar');}return;
  }
+ if(action==='scope-open-consolidation'){
+   S.scopeConsolidationModule=Number(S.moduleId);S.scopeSession='ordinaria';
+   try{await page('preparar');}catch(ex){S.scopeConsolidationModule=null;throw ex;}return;
+ }
+ if(action==='scope-back-notebook'){S.scopeConsolidationModule=null;await page('preparar');return;}
  if(action==='scope-open-notebook'){
    if(!confirm('Abre el cuaderno con el currículo guardado. Los cambios del formulario que no hayas guardado se descartarán. ¿Continuar?'))return;
    S.scopeNotebookModule=Number(S.moduleId);await page('preparar');return;
  }
  if(action==='scope-edit-curriculum'){
-   S.scopeNotebookModule=null;await page('preparar');return;
+   S.scopeNotebookModule=null;S.scopeConsolidationModule=null;await page('preparar');return;
  }
  if(action==='scope-official'){
    if(!confirm('Se descargará el PDF institucional del anexo 1. ¿Autoriza la consulta?'))return;
