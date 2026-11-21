@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = re.search(r'^APP_VERSION\s*=\s*[\"\']([^\"\']+)', (ROOT/'app.py').read_text(encoding='utf-8'), re.MULTILINE).group(1)
@@ -53,7 +54,10 @@ def build():
             '--add-data', f'{ROOT/"assets"}{os.pathsep}assets',
             '--hidden-import', 'webview',
             '--hidden-import', 'canarias_reference',
-            '--hidden-import', 'canarias_modules']
+            '--hidden-import', 'canarias_modules',
+            '--hidden-import', 'common_scope_official', '--hidden-import', 'common_scope_export',
+            '--hidden-import', 'canarias_backup', '--hidden-import', 'canarias_feoe',
+            '--hidden-import', 'canarias_cycle_record', '--hidden-import', 'canarias_academic_decisions']
     if target == 'macos':
         args += ['--windowed', '--osx-bundle-identifier', 'org.evaluafpcanarias.local',
                  '--hidden-import', 'webview.platforms.cocoa']
@@ -96,11 +100,13 @@ def build():
     shutil.copy2(ROOT/'docs'/'PORTABLE_LINUX_MAC.md',staging/'LEEME_LINUX_MAC.md')
     # Esta prueba NO requiere entorno gráfico, pero verifica que el empaquetado
     # puede cargar HTML, SQLite, exportaciones y pywebview.
-    env=os.environ.copy()
-    env['EVALUAFP_CANARIAS_PORTABLE_HOME']=str(staging)
-    env['EVALUAFP_CANARIAS_PORTABLE']='1'
-    print('+ Selftest',binary)
-    subprocess.run([str(binary),'--selftest'],env=env,check=True,timeout=180)
+    with tempfile.TemporaryDirectory(prefix='efp_selftest_') as test_home:
+        env=os.environ.copy()
+        env.pop('EVALUAFP_CANARIAS_DATA_DIR',None)
+        env['EVALUAFP_CANARIAS_PORTABLE_HOME']=test_home
+        env['EVALUAFP_CANARIAS_PORTABLE']='1'
+        print('+ Selftest',binary)
+        subprocess.run([str(binary),'--selftest'],env=env,check=True,timeout=180)
     archive=ROOT/'dist'/f'{package}.{ "zip" if target=="macos" else "tar.gz"}'
     if target=='macos':
         # ditto mantiene enlaces simbólicos, permisos y metadatos de .app.
