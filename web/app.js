@@ -106,7 +106,7 @@ async function busy(work,ok){
  catch(e){console.error(e);toast(e.message||'Error no identificado',true);return null;}
  finally{S.busy=false;document.body.style.cursor=original;}
 }
-function titles(){return {inicio:'Mi espacio docente',preparar:'Preparar mi módulo',programaciones:'Edición avanzada de la programación',examenes:'Exámenes y rúbricas',
+function titles(){return {decisiones:'Decisiones académicas',inicio:'Mi espacio docente',preparar:'Preparar mi módulo',programaciones:'Edición avanzada de la programación',examenes:'Exámenes y rúbricas',
  entregas:'Registro de entregas',correcciones:'Visor y correcciones',evaluacion:'Evaluación del módulo',ajustes:'Configuración local e IA'};}
 async function page(name){
  const revision=++navigationRevision;
@@ -116,9 +116,10 @@ async function page(name){
  $all('[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===name));
  setLoading();
  try{
- const supported=['inicio','preparar','programaciones','examenes','entregas','correcciones','evaluacion','ajustes'];
+ const supported=['inicio','preparar','programaciones','examenes','entregas','correcciones','evaluacion','ajustes','decisiones'];
  if(!supported.includes(name))throw Error('No se reconoce la sección solicitada: '+name);
  if(name==='inicio')await viewHome();
+ if(name==='decisiones')await viewAcademicDecisions();
  if(name==='preparar')await viewPrepare();
  if(name==='programaciones')await viewPrograms();
  if(name==='examenes')await viewExams();
@@ -140,6 +141,23 @@ function empty(msg){return `<div class="empty">${E(msg)}</div>`;}
 function labelStatus(status){const map={received:'Recibido',transcribed:'Transcrito',proposed:'Pendiente de validación',validated:'Validado'};
  return `<span class="status ${E(status)}">${E(map[status]||status)}</span>`;}
 function intro(text){return `<p class="lead">${E(text)}</p>`;}
+function academicDecisionFields(action){
+ const field=(label,body)=>`<div class="field"><label>${label}</label>${body}</div>`;
+ const state=(name,label)=>field(label,`<select name="${name}"><option value="pendiente">Pendiente de comprobar</option><option value="superado">Sí / superado</option><option value="no_superado">No / no superado</option></select>`);
+ const num=(name,label,max,step='1',min='0')=>field(label,`<input name="${name}" type="number" min="${min}" max="${max}" step="${step}" required>`);
+ const check=(name,label)=>`<label class="checkbox-card"><input type="checkbox" name="${name}"> ${label}</label>`;
+ if(action==='promotion')return field('Sesión final',`<select name="session"><option value="ordinaria">Ordinaria / final de primero GM y GS</option><option value="extraordinaria">Extraordinaria de GB</option></select>`)+num('pending_modules','Número de módulos profesionales pendientes a efectos de promoción',100)+num('pending_hours','Horas semanales de los módulos pendientes',2000,'0.0001')+num('total_hours','Carga horaria semanal total de primero (misma unidad)',2000,'0.0001','0.0001')+num('pending_common','Ámbitos comunes no superados (solo GB; en ordinaria cuenta cualquier materia insuficiente)',2)+`<p class="small">En GM/GS excluye del recuento los módulos en que solo queda pendiente la FEOE y se han alcanzado los RA del centro. Esta comprobación se refiere a primero → segundo, no a itinerarios de tres cursos.</p>`+check('record_complete','He comprobado todo el expediente, las horas y los criterios de promoción aplicables.');
+ if(action==='permanence')return num('years_used','Cursos académicos de permanencia consumidos',20)+check('record_complete','He contrastado el expediente y las renuncias o autorizaciones aplicables.');
+ if(action==='feoe')return field('Curso',`<select name="course"><option value="1">Primero</option><option value="2">Segundo</option></select>`)+state('age_16','Edad mínima de 16 años al inicio de la estancia')+state('prl','Competencias preventivas necesarias')+state('annex_v','Valoración colegiada de PRL documentada y aplicable')+field('Certificación específica solicitada por la empresa',`<select name="specific_certificate"><option value="pendiente">Requerida o sin comprobar</option><option value="no_requerido">No requerida</option><option value="expedido">Expedida por el centro</option></select>`)+check('conditions_confirmed','He comprobado plan formativo, condiciones de incorporación y calendario.');
+ return state('modules','Todos los módulos profesionales, incluidos pendientes de primero')+state('common','Todos los ámbitos comunes (solo GB)')+state('project','Proyecto intermodular')+field('FEOE',`<select name="feoe"><option value="pendiente">Pendiente</option><option value="superado">Superada</option><option value="no_superado">No superada</option><option value="exencion_resuelta">Exención concedida y contrastada, cuando proceda</option></select>`)+check('record_complete','He comprobado la totalidad del expediente y la procedencia de las exenciones.');
+}
+async function viewAcademicDecisions(){
+ const actions={promotion:'Promoción de primero a segundo',permanence:'Permanencia',feoe:'Acceso a formación en empresa',graduation:'Titulación'};
+ const action=S.academicAction||'promotion';
+ $('#main').innerHTML=`<section class="welcome-card"><p class="welcome-kicker">CANARIAS · CURSO 2026–2027</p><h2>Comprobación de decisiones académicas</h2><p>Asistente de consulta para ciclos A&amp;G de dos cursos, nueva ordenación presencial ordinaria. Introduce datos contrastados. No se guardan datos personales ni se emiten actas, certificados o decisiones oficiales.</p></section>
+ <section class="panel"><form id="academic-action"><div class="field"><label>Comprobación</label><select name="action">${Object.entries(actions).map(([k,v])=>`<option value="${k}" ${action===k?'selected':''}>${E(v)}</option>`).join('')}</select></div><button class="btn secondary" type="submit">Seleccionar</button></form></section>
+ <section class="panel"><form id="academic-evaluate" class="formgrid"><div class="field"><label>Ciclo</label><select name="cycle" required>${agCycleOptions()}</select></div>${academicDecisionFields(action)}<button class="btn" type="submit">Comprobar requisitos</button></form><div id="academic-result"></div></section>`;
+}
 async function viewHome(){
  await listModules();
  const hasModule=S.modules.length>0;
@@ -149,7 +167,8 @@ async function viewHome(){
  ['preparar','▤','Preparar mi módulo','Importar una programación, crear un borrador o configurar RA y CE.'],
  ['examenes','✎','Crear una prueba','Generar un examen o utilizar tus propias preguntas.'],
  ['entregas','▧','Corregir trabajos','Cargar PDF o fotografías y revisar propuestas de corrección.'],
- ['evaluacion','▥','Ver la evaluación','Consultar notas por RA y CE y preparar exportaciones.']];
+ ['evaluacion','▥','Ver la evaluación','Consultar notas por RA y CE y preparar exportaciones.'],
+ ['decisiones','✓','Comprobar decisiones académicas','Promoción, permanencia, acceso a empresa y titulación.']];
  $('#main').innerHTML=`<div class="welcome-card"><p class="welcome-kicker">ADMINISTRACIÓN Y GESTIÓN · CANARIAS</p>
  <h2>${hasModule?'¿Qué necesitas hacer hoy?':'Prepara tu primer módulo en unos pasos'}</h2>
  <p>${hasModule?'Selecciona una tarea. EvalúaFP conserva los documentos y las calificaciones en tu equipo.':'Puedes incorporar tu programación actual, crear un borrador editable o configurar solo la evaluación. No necesitas adaptar previamente tu documento a una plantilla.'}</p>
@@ -1602,6 +1621,16 @@ async function doSubmit(form){
    }),'Apartados confirmados y conservados en el borrador.');
    if(result){S.importPreview=null;S.wizardDraft=null;S.preparePath='import';await page('preparar');}
    return;
+ }
+ if(id==='academic-action'){S.academicAction=form.elements.action.value;await page('decisiones');return;}
+ if(id==='academic-evaluate'){
+   const b=formObject(form),target=$('#academic-result');
+   const raw={...b,academic_year:'2026-2027',modality:'presencial_ordinaria',action:S.academicAction||'promotion',cycle_years:2};
+   for(const key of ['pending_modules','pending_common','years_used','course'])if(key in b)raw[key]=Number(b[key]);
+   for(const key of ['record_complete','conditions_confirmed'])raw[key]=Boolean(form.elements[key]?.checked);
+   const result=await busy(()=>API('/api/academic-decisions/evaluate','POST',raw));
+   if(!result||!target.isConnected)return;
+   target.innerHTML=`<section class="panel"><h3>${E(result.status.replaceAll('_',' ').toUpperCase())}</h3><p>${E(result.reason)}</p><p>Versión de reglas: ${E(result.rules_version)}. No constituye una decisión oficial.</p><ul>${result.sources.map(u=>`<li><a href="${E(u)}" target="_blank" rel="noopener noreferrer">${E(u)}</a></li>`).join('')}</ul></section>`;return;
  }
  if(id==='scope-create-plan'){
    const b=formObject(form),origin=String(b.origin||'').split('|');
