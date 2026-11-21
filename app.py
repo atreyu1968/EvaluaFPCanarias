@@ -694,11 +694,7 @@ class Handler(BaseHTTPRequestHandler):
                 if m:return self.send(exam_detail(d,int(m[1])))
                 m=re.fullmatch(r'/api/submissions/(\d+)',path)
                 if m:return self.send(sub_detail(d,int(m[1])))
-                if path=='/api/backup/recover':
-            import canarias_backup
-            return self.send(canarias_backup.recover_archive(data.BACKUPS,data.DATA,
-                body.get('name'),body.get('confirmed')))
-        if path=='/api/settings':
+                if path=='/api/settings':
                     return self.send({**ia.settings(),**ia.secret_status(), 'api_key_configured':ia.key_available(),
                                       **storage_config.get_info()})
                 m=re.fullmatch(r'/api/pages/(\d+)/image',path)
@@ -733,6 +729,10 @@ class Handler(BaseHTTPRequestHandler):
             fields,files=multipart(self)
         else:
             body=read_json(self)
+        if path=='/api/backup/recover':
+            import canarias_backup
+            return self.send(canarias_backup.recover_archive(data.BACKUPS,data.DATA,
+                body.get('name'),body.get('confirmed')))
         if path=='/api/settings':
             for required in ('provider','base_url','model_generation','model_vision','model_correction','model_analysis'):
                 if not str(body.get(required,'')).strip():raise ValueError(f'Falta el ajuste {required}')
