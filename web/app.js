@@ -968,6 +968,23 @@ function guidedReadProposal(form){
    }))
  }));
 }
+function scopeNotebookMarkup(book){
+ const students=Object.fromEntries(book.students.map(x=>[x.id,x]));
+ const activities=Object.fromEntries(book.activities.map(x=>[x.id,x]));
+ const instrumentLabels={observacion:'Observación',rubrica:'Rúbrica',lista_cotejo:'Lista de cotejo',prueba:'Prueba',portfolio:'Portafolio',proyecto:'Proyecto',otro:'Otro'};
+ const ready=book.teacher_reviewed&&book.criteria.length;
+ const usable=book.activities.filter(x=>x.criteria_current);
+ const options=usable.map(a=>`<optgroup label="${E(a.title)}">${a.criteria.map(c=>`<option value="${Number(a.id)}|${E(c.code)}">${E(c.code)} · ${E(c.description.slice(0,90))}</option>`).join('')}</optgroup>`).join('');
+ const renderEvidence=rows=>rows.length?`<div class="tablewrap"><table><thead><tr><th>Alumno</th><th>Actividad / criterio</th><th>Valoración</th><th>Observación / referencia</th><th>Registro</th></tr></thead><tbody>${rows.map(e=>`<tr><td>${E(students[e.student_id]?.name||'Alumno')}</td><td>${E(activities[e.activity_id]?.title||'Actividad')} · ${E(e.criterion_code)}</td><td>${E(e.level)}</td><td>${E(e.notes)} ${E(e.evidence_ref)}</td><td>${E(e.created_at)}</td></tr>`).join('')}</tbody></table></div>`:empty('Sin evidencias registradas.');
+ return `<section class="welcome-card"><p class="welcome-kicker">CFGB · CUADERNO COMPETENCIAL</p><h2>${E(book.profile.ambito)}</h2><p>${E(book.notice)} NE = no evaluado; no equivale a suspenso.</p><button class="btn secondary" data-action="scope-edit-curriculum">Volver al currículo</button></section>
+ <section class="panel"><h2>Alumnado de la materia (${book.students.length})</h2><form id="scope-add-student" class="formgrid"><div class="field"><label>Código</label><input name="code" required maxlength="100"></div><div class="field"><label>Nombre</label><input name="name" required maxlength="250"></div><button type="submit" class="btn secondary">Registrar alumno</button></form>
+ ${book.students.length?`<details><summary>Ver alumnado registrado</summary><ul>${book.students.map(x=>`<li>${E(x.name)} · ${E(x.code)}</li>`).join('')}</ul></details>`:''}</section>
+ ${!ready?'<p class="hint warning">Confirma primero los criterios del currículo. Las evidencias históricas permanecen visibles, pero se bloquean las nuevas valoraciones.</p>':`<section class="panel"><h2>Nueva actividad evaluable</h2><form id="scope-add-activity" class="formgrid"><div class="field"><label>Título de la actividad</label><input name="title" required maxlength="250"></div><div class="field"><label>Situación de aprendizaje</label><input name="situation" required maxlength="2000"></div><div class="field"><label>Instrumento</label><select name="instrument">${Object.entries(instrumentLabels).map(([k,v])=>`<option value="${k}">${E(v)}</option>`).join('')}</select></div><div class="field"><label>Evaluación</label><select name="term"><option value="1">Primera</option><option value="2">Segunda</option><option value="3">Tercera</option></select></div><div class="field"><label>Fecha</label><input type="date" name="activity_date" required></div><div class="field"><label>Criterios de la actividad</label>${book.criteria.map(c=>`<label class="checkbox-card"><input type="checkbox" name="criterion_codes" value="${E(c.code)}"> ${E(c.code)} · ${E(c.description)}</label>`).join('')}</div><button type="submit" class="btn">Guardar actividad</button></form></section>`}
+ <section class="panel"><h2>Actividades (${book.activities.length})</h2>${book.activities.length?book.activities.map(a=>`<details><summary>${E(a.title)} · ${E(a.activity_date)} · ${E(instrumentLabels[a.instrument]||a.instrument)}</summary><p>${E(a.situation)} · Evaluación ${a.term}</p>${a.criteria_current?'':'<p class="hint warning">Currículo modificado: actividad histórica, no admite nuevas evidencias.</p>'}<ul>${a.criteria.map(c=>`<li>${E(c.code)} · ${E(c.description)}</li>`).join('')}</ul></details>`).join(''):empty('Aún no hay actividades.')}</section>
+ ${ready&&book.students.length&&usable.length?`<section class="panel"><h2>Registrar o revisar una evidencia</h2><form id="scope-add-evidence" class="formgrid"><div class="field"><label>Alumno</label><select name="student_id">${opt(book.students,null,x=>x.name+' · '+x.code)}</select></div><div class="field"><label>Actividad y criterio</label><select name="activity_criterion">${options}</select></div><div class="field"><label>Valoración de la evidencia</label><select name="level"><option value="NE">NE · No evaluado</option><option value="IN">IN · Insuficiente</option><option value="SU">SU · Suficiente</option><option value="BI">BI · Bien</option><option value="NT">NT · Notable</option><option value="SB">SB · Sobresaliente</option></select></div><div class="field"><label>Observación</label><textarea name="notes" rows="3" maxlength="4000"></textarea></div><div class="field"><label>Referencia de evidencia (texto; no se sube ningún archivo)</label><input name="evidence_ref" maxlength="500"></div><button class="btn" type="submit">Guardar nueva valoración</button><p class="small">Una revisión de la misma actividad, alumno y criterio conserva las anteriores en el historial.</p></form></section>`:''}
+ <section class="panel"><h2>Seguimiento individual</h2>${book.students.length?book.students.map(st=>{const ev=book.latest_evidence.filter(e=>e.student_id===st.id);const seen=new Set(ev.filter(e=>e.level!=='NE'&&activities[e.activity_id]?.criteria_current).map(e=>e.criterion_code));return `<details><summary>${E(st.name)} · ${seen.size}/${book.criteria.length} criterios actuales con evidencia valorada</summary>${renderEvidence(ev)}</details>`}).join(''):empty('Registra alumnado para iniciar el seguimiento.')}</section>
+ <section class="panel"><details><summary>Historial de valoraciones (${book.history.length})</summary>${renderEvidence(book.history)}</details></section>`;
+}
 function commonScopeMarkup(info){
  const p=info.profile,d=info.draft;
  const rows=Array.from({length:p.max_competencies},(_,i)=>{
@@ -1002,7 +1019,7 @@ async function viewPrepare(){
  <button class="btn" type="submit">Crear módulo y continuar</button></form></section>${catalogPanel()}`;return;}
  const scope=await API('/api/common-scopes/draft?module_id='+Number(S.moduleId));
  if(scope.profile){
-   $('#main').innerHTML=`<section class="guide-context"><div class="field"><label>Materia que estás preparando</label><select id="prepare-module">${opt(S.modules,S.moduleId,m=>m.name+' · '+m.academic_year)}</select></div><button type="button" class="btn secondary" data-action="prepare-new-module">+ Nuevo módulo</button></section>`+commonScopeMarkup(scope);
+   $('#main').innerHTML=`<section class="guide-context"><div class="field"><label>Materia que estás preparando</label><select id="prepare-module">${opt(S.modules,S.moduleId,m=>m.name+' · '+m.academic_year)}</select></div><button type="button" class="btn secondary" data-action="prepare-new-module">+ Nuevo módulo</button></section>`+(S.scopeNotebookModule===Number(S.moduleId)?scopeNotebookMarkup(await API('/api/common-scopes/notebook?module_id='+Number(S.moduleId))):`<section class="panel"><button class="btn" data-action="scope-open-notebook">Abrir cuaderno de evaluación competencial</button></section>`+commonScopeMarkup(scope));
    return;
  }
  const info=await API('/api/programming-builder/'+Number(S.moduleId));S.prepareInfo=info;
@@ -1560,6 +1577,20 @@ async function doSubmit(form){
    }),'Apartados confirmados y conservados en el borrador.');
    if(result){S.importPreview=null;S.wizardDraft=null;S.preparePath='import';await page('preparar');}
    return;
+ }
+ if(id==='scope-add-student'){
+   const b=formObject(form);const result=await busy(()=>API('/api/students','POST',{module_id:Number(S.moduleId),code:b.code,name:b.name}),'Alumno registrado.');
+   if(result)await page('preparar');return;
+ }
+ if(id==='scope-add-activity'){
+   const b=formObject(form),criterion_codes=Array.from(form.querySelectorAll('[name=criterion_codes]:checked')).map(el=>el.value);
+   const result=await busy(()=>API('/api/common-scopes/activity','POST',{module_id:Number(S.moduleId),activity:{title:b.title,situation:b.situation,instrument:b.instrument,term:Number(b.term),activity_date:b.activity_date,criterion_codes}}),'Actividad guardada.');
+   if(result)await page('preparar');return;
+ }
+ if(id==='scope-add-evidence'){
+   const b=formObject(form),parts=String(b.activity_criterion||'').split('|');
+   const result=await busy(()=>API('/api/common-scopes/evidence','POST',{module_id:Number(S.moduleId),evidence:{activity_id:Number(parts[0]),criterion_code:parts[1],student_id:Number(b.student_id),level:b.level,notes:b.notes,evidence_ref:b.evidence_ref}}),'Valoración registrada con historial.');
+   if(result)await page('preparar');return;
  }
  if(id==='common-scope-draft'){
    const competencies=[];
@@ -2321,6 +2352,13 @@ document.addEventListener('click',async event=>{
    if(!confirm('Se enviará el texto de la programación al proveedor de IA configurado. No incluya datos personales innecesarios. ¿Autoriza el análisis?'))return;
    const result=await busy(()=>API('/api/programmings/analyze','POST',{programming_id:id}));
    if(result){S.proposal=result;await page('preparar');}return;
+ }
+ if(action==='scope-open-notebook'){
+   if(!confirm('Abre el cuaderno con el currículo guardado. Los cambios del formulario que no hayas guardado se descartarán. ¿Continuar?'))return;
+   S.scopeNotebookModule=Number(S.moduleId);await page('preparar');return;
+ }
+ if(action==='scope-edit-curriculum'){
+   S.scopeNotebookModule=null;await page('preparar');return;
  }
  if(action==='scope-official'){
    if(!confirm('Se descargará el PDF institucional del anexo 1. ¿Autoriza la consulta?'))return;
