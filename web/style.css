@@ -188,3 +188,20 @@
 .guide-feoe-minimal td{vertical-align:top}
 .guide-feoe-minimal td:nth-child(1){min-width:120px}
 .guide-feoe-minimal td:nth-child(2){min-width:180px}
+/* Auditoría UX: recorrido principal compacto y foco visible. */
+.sidebar{overflow-y:auto;overscroll-behavior:contain}
+.compact-welcome{padding:23px 27px;margin-bottom:16px}
+.home-context{margin-bottom:16px}.home-context p{margin:8px 0 0}
+.home-workflow{display:grid;gap:9px}
+.workflow-task{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:13px 16px;border-radius:10px;background:var(--paper);border:1px solid var(--line);color:var(--text);font:inherit;cursor:pointer}
+.workflow-task:hover{border-color:var(--primary);background:#f1f7fa}
+.workflow-number{display:grid;place-items:center;min-width:34px;height:34px;border-radius:8px;background:#e6f1f6;color:#174b78;font-weight:800}
+.workflow-text{flex:1;min-width:0;display:grid;gap:3px}.workflow-text small{color:var(--muted);font-size:12px}
+.workflow-arrow{font-size:24px;color:var(--primary)}
+.advanced-grid{display:flex;gap:10px;flex-wrap:wrap}
+.eval-section{margin-bottom:14px;border:1px solid var(--line);border-radius:13px;background:var(--paper)}
+.eval-section>summary{padding:15px 19px;font-weight:750;cursor:pointer}
+.eval-section>summary small{font-weight:400;color:var(--muted);margin-left:10px}
+.eval-section>.panel,.eval-section>.grid2{margin:0 12px 12px;box-shadow:none}
+button:focus-visible,summary:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid #2895cc;outline-offset:3px}
+@media(max-width:700px){.sidebar{overflow-y:visible}.compact-welcome{padding:18px}.workflow-task{padding:11px}.eval-section>summary{padding:12px}.eval-section>summary small{display:block;margin:3px 0 0}}
