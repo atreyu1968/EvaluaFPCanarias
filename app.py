@@ -475,6 +475,13 @@ class Handler(BaseHTTPRequestHandler):
                         stats[table]=d.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]
                     return self.send(stats)
                 if path=='/api/modules':return self.send(data.dicts(d.execute('SELECT * FROM modules ORDER BY id DESC')))
+                if path=='/api/cycle-record/agreement.html':
+                    import canarias_cycle_record as cycle_record
+                    mid=int((args.get('module_id') or ['0'])[0])
+                    sid=int((args.get('student_id') or ['0'])[0])
+                    rid=int((args.get('record_id') or ['0'])[0])
+                    blob,mime,filename=cycle_record.export_agreement(d,mid,sid,rid)
+                    return self.send_bytes(blob,mime,filename)
                 if path in ('/api/cycle-record/roster','/api/cycle-record/report'):
                     import canarias_cycle_record as cycle_record
                     mid=int((args.get('module_id') or ['0'])[0])
