@@ -64,7 +64,7 @@ let navigationController = null;
 let navigationRevision = 0;
 async function API(path, method='GET', payload=null){
  const isRead=method.toUpperCase()==='GET';
- const timeout= isRead ? 20000 : (path.includes('/api/programming-builder/propose')||path.includes('/api/programming-builder/improve')||path.includes('/api/programming-builder/enrich-units') ? 240000 : 180000);
+ const timeout=path==='/api/backup/recover'?600000:isRead ? 20000 : (path.includes('/api/programming-builder/propose')||path.includes('/api/programming-builder/improve')||path.includes('/api/programming-builder/enrich-units') ? 240000 : 180000);
  const controller=new AbortController();
  const navigationSignal=isRead ? navigationController?.signal : null;
  const onNavigationAbort=()=>controller.abort('navigation');
@@ -1611,6 +1611,7 @@ function renderEvalScores(){
 }
 async function viewSettings(){
  const a=await API('/api/settings');S.aiSettings=a;
+ const backups=(await API('/api/backup/list')).archives;
  $('#main').innerHTML=`${intro('OpenAI o API compatible. Datos, SQLite y originales guardados localmente; en modo USB todas las rutas se guardan relativas al dispositivo.')}
  <section class="panel"><h2>Proveedor de IA</h2><form id="save-settings"><div class="formgrid">
  ${[['provider','Proveedor (etiqueta)'],['base_url','URL base de API'],['model_analysis','Modelo: análisis de programación'],['model_generation','Modelo: generación'],['model_vision','Modelo: visión manuscrita'],['model_correction','Modelo: corrección']].map(([key,label])=>`<div class="field"><label>${label}</label><input name="${key}" required value="${E(a[key])}"></div>`).join('')}</div>
@@ -1630,7 +1631,10 @@ async function viewSettings(){
  <div class="actions"><button class="btn secondary" type="submit">Migrar datos y cambiar carpetas</button></div></form>
  <p class="small">El cambio copia documentos y SQLite, actualiza las rutas guardadas y exige reiniciar EvalúaFP. Los archivos antiguos se conservan como medida de seguridad.</p>
  <div class="actions"><a class="btn secondary" href="/api/backup">Crear copia ZIP en la carpeta elegida y descargarla</a></div>
- <p class="small">En modo USB, la copia incluye la clave API solo en su formato cifrado, nunca la contraseña maestra.</p></section>
+ <p class="small">En modo USB, la copia incluye la clave API solo en su formato cifrado, nunca la contraseña maestra. Los expedientes del ZIP no están cifrados.</p>
+ <details class="eval-section"><summary>Recuperar una copia de seguridad</summary><div class="panel"><p>Se creará una carpeta nueva junto a tu carpeta de datos. No se sustituirá ni se activará la base de datos en uso. Solo se admiten copias con manifiesto de integridad.</p>
+ <button class="btn secondary" type="button" data-action="backup-list-refresh">Actualizar lista de copias</button>
+ ${backups.length?`<form id="backup-recover"><div class="field"><label for="backup-choice">Copia local</label><select id="backup-choice" name="name" required>${backups.map(b=>`<option value="${E(b.name)}">${E(b.name)} · ${(b.size/1048576).toFixed(1)} MB</option>`).join('')}</select></div><label><input type="checkbox" name="confirmed" required> Confirmo que deseo recuperar los datos en una carpeta independiente.</label><div class="actions"><button class="btn" type="submit">Verificar y recuperar</button></div></form>`:empty('No hay copias ZIP locales en la carpeta configurada.')}<div id="backup-recovery-result" role="status"></div></div></details></section>
  <section class="panel"><h2>Seguridad de los datos del alumnado</h2>
  <p>El programa no requiere Internet para consultar las notas, exámenes o SQLite. Las solicitudes de IA sí transmitirán los textos o imágenes necesarios al proveedor elegido.</p>
  <div class="hint warning">Un pendrive convencional no protege la base SQLite ni los PDF ante robo o extravío. Utilice un dispositivo USB con cifrado de unidad (por ejemplo, BitLocker To Go) y realice copias en otra ubicación segura.</div>
@@ -1641,6 +1645,12 @@ function downloadText(value,name,mime){const url=URL.createObjectURL(new Blob([v
 function formObject(form){return Object.fromEntries(new FormData(form).entries());}
 async function doSubmit(form){
  const id=form.id;
+ if(id==='backup-recover'){
+   const dest=$('#backup-recovery-result');
+   const result=await busy(()=>API('/api/backup/recover','POST',{name:form.elements.name.value,confirmed:form.elements.confirmed.checked}));
+   if(result&&dest?.isConnected){dest.innerHTML=`<p><strong>Recuperación verificada.</strong> Los datos actuales permanecen intactos.</p><pre class="path">${E(result.path)}</pre><p>La carpeta recuperada no se ha activado. Cierra EvalúaFP y consulta el procedimiento de configuración del almacenamiento antes de usarla.</p>`;form.elements.confirmed.checked=false;}
+   return;
+ }
  if(id==='home-context'){
    const mid=Number(form.elements.module_id.value);
    if(!S.modules.some(m=>Number(m.id)===mid))throw Error('Seleccione un módulo disponible.');
@@ -2026,6 +2036,7 @@ document.addEventListener('click',async event=>{
  const el=event.target.closest('[data-action]');if(!el)return;
  const action=el.dataset.action;const id=Number(el.dataset.id);const index=Number(el.dataset.index);
  if(action==='eval-scope-notebook'){S.moduleId=Number(S.evaluationModuleId);S.scopeNotebookModule=S.moduleId;S.scopeConsolidationModule=null;await page('preparar');return;}
+ if(action==='backup-list-refresh'){await page('ajustes');return;}
  if(action==='home-advanced'){S.advanced=true;syncMode();await page('inicio');return;}
  if(action==='home-task'){
    const destination=el.dataset.target;
