@@ -82,6 +82,9 @@ class CanariasModuleReferenceHTTPTests(unittest.TestCase):
         self.assertFalse(ref['curriculum_confirmed'])
         self.assertFalse(ref['ra_ce_imported_from_reference'])
         self.assertFalse(info['draft']['curriculum_confirmed'])
+        self.assertFalse(info['draft']['schedule']['hours_confirmed'])
+        self.assertEqual(info['draft']['schedule']['total_hours'], 0)
+        self.assertEqual(info['draft']['schedule']['weekly_hours'], 0)
         self.assertEqual(info['draft']['official_module_code'], '')
         self.assertEqual((info['counts']['ra'], info['counts']['ce']), (0, 0))
         with database.connect() as db:
