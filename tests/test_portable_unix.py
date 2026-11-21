@@ -27,19 +27,19 @@ class UnixDesktopTests(unittest.TestCase):
         import storage_config
         with TemporaryDirectory() as t:
             root=Path(t)
-            exe=root/'EvaluaFP_Portatil.app'/'Contents'/'MacOS'/'EvaluaFP_Portatil'
+            exe=root/'EvaluaFPCanarias_Portatil.app'/'Contents'/'MacOS'/'EvaluaFPCanarias_Portatil'
             exe.parent.mkdir(parents=True)
             exe.touch()
             with patch.object(storage_config.sys,'platform','darwin'),\
                  patch.object(storage_config.sys,'frozen',True,create=True),\
                  patch.object(storage_config.sys,'executable',str(exe)),\
-                 patch.dict('os.environ',{'EVALUAFP_PORTABLE_HOME':''}):
+                 patch.dict('os.environ',{'EVALUAFP_CANARIAS_PORTABLE_HOME':''}):
                 self.assertEqual(storage_config._application_home().resolve(),root.resolve())
 
     def test_explicit_portable_home_is_relative_to_usb(self):
         import storage_config
         with TemporaryDirectory() as t:
-            with patch.dict('os.environ',{'EVALUAFP_PORTABLE_HOME':t}):
+            with patch.dict('os.environ',{'EVALUAFP_CANARIAS_PORTABLE_HOME':t}):
                 self.assertEqual(storage_config._application_home().resolve(),Path(t).resolve())
 
     def test_workflow_includes_three_architectures(self):

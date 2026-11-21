@@ -45,16 +45,16 @@ class CatalogHTTPTests(unittest.TestCase):
             return err.code,json.load(err)
 
     def test_end_to_end_and_non_destructive_draft(self):
-        code,preview=self.query('api/national/catalog/preview',{'table':TABLE,'region':'Comunidad de Madrid','academic_year':'2026-2027'})
+        code,preview=self.query('api/national/catalog/preview',{'table':TABLE,'region':'Canarias','academic_year':'2026-2027'})
         self.assertEqual((code,preview['count']),(200,2))
-        payload={'table':TABLE,'region':'Comunidad de Madrid','academic_year':'2026-2027',
+        payload={'table':TABLE,'region':'Canarias','academic_year':'2026-2027',
                  'source_url':SOURCE,'source_title':'Norma consultada — ejemplo de validación del centro','teacher_confirmed':True}
         code,imported=self.query('api/national/catalog/import',payload)
         self.assertEqual((code,imported['added']),(200,2))
         code,catalog=self.query('api/national/catalog?region=Comunidad%20de%20Madrid&academic_year=2026-2027&q=0650')
         self.assertEqual((code,catalog['count']),(200,1))
         entry=catalog['entries'][0]
-        creation={'academic_year':'2026-2027','territory':'Comunidad de Madrid',
+        creation={'academic_year':'2026-2027','territory':'Canarias',
             'cycle':entry['title_name'],'name':entry['module_name'],'group_name':'1A',
             'catalog_entry_id':entry['id']}
         code,new=self.query('api/modules',creation)
@@ -67,11 +67,16 @@ class CatalogHTTPTests(unittest.TestCase):
         self.assertEqual(draft['official_cycle_code'],'DEMO-001')
         self.assertFalse(draft['curriculum_confirmed'])
         self.assertEqual(draft['curriculum_source_url'],SOURCE)
-        self.assertEqual(draft['region'],'Comunidad de Madrid')
+        self.assertEqual(draft['region'],'Canarias')
         self.assertEqual(builder['counts']['ra'],0)
         self.assertEqual(builder['counts']['ce'],0)
         self.assertFalse(draft['schedule']['hours_confirmed'])
         self.assertFalse(draft['schedule']['calendar_confirmed'])
+        # Un ámbito distinto de Canarias nunca puede crear un módulo.
+        elsewhere=dict(creation,territory='Comunidad de Madrid')
+        code,response=self.query('api/modules',elsewhere,expect_error=True)
+        self.assertEqual(code,400)
+        self.assertIn('solo admite',response['error'])
         bad=dict(creation,academic_year='2027-2028')
         code,response=self.query('api/modules',bad,expect_error=True)
         self.assertEqual(code,400)

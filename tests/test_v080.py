@@ -32,7 +32,7 @@ class Version080HTTP(unittest.TestCase):
             return json.loads(r.read()) if 'json' in r.headers.get('Content-Type','') else r.read()
 
     def test_bulk_missing_students_and_atomic_resume(self):
-        module=self.req('api/modules',{'academic_year':'2026-2027','cycle':'CFGM','name':'Evaluación v080','group_name':'A'})
+        module=self.req('api/modules',{'academic_year':'2026-2027','cycle':'CFGM Gestión Administrativa','name':'Evaluación v080','group_name':'A'})
         ra=self.req('api/outcomes',{'module_id':module['id'],'code':'RA080','description':'RA de prueba','weight':100})
         ce=self.req('api/criteria',{'outcome_id':ra['id'],'code':'RA080.a','description':'CE de prueba','weight':100})
         exam=self.req('api/exams/manual',{'module_id':module['id'],'title':'Examen v080','questions':[{

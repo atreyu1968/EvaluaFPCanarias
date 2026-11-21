@@ -39,7 +39,7 @@ class MaterialTests(unittest.TestCase):
         return b''.join(blocks),f'multipart/form-data; boundary={boundary}'
 
     def test_sources_are_mandatory_and_provenance_is_saved(self):
-        mid=self.req('api/modules',{'academic_year':'2026-2027','cycle':'GM','name':'Biblioteca de prueba','group_name':'A'})['id']
+        mid=self.req('api/modules',{'academic_year':'2026-2027','cycle':'CFGM Gestión Administrativa','name':'Biblioteca de prueba','group_name':'A'})['id']
         ra=self.req('api/outcomes',{'module_id':mid,'code':'RA3','description':'Operaciones de compras','weight':100})['id']
         ce=self.req('api/criteria',{'outcome_id':ra,'code':'RA3.b','description':'Registrar compras mercaderías con proveedores','weight':100})['id']
         programming=b'RA3: Operaciones de compras. RA3.b: Registrar compras mercaderias con proveedores. Ponderacion 100%.'
@@ -109,7 +109,7 @@ class MaterialTests(unittest.TestCase):
         import fitz
         pdf=fitz.open();pdf.new_page()
         raw=pdf.tobytes();pdf.close()
-        mid=self.req('api/modules',{'academic_year':'2026-2027','cycle':'GM','name':'PDF escaneado','group_name':''})['id']
+        mid=self.req('api/modules',{'academic_year':'2026-2027','cycle':'CFGM Gestión Administrativa','name':'PDF escaneado','group_name':''})['id']
         with dbm.connect() as db:
             db.execute('INSERT INTO programmings(module_id,filename,local_path,sha256,extracted_text,uploaded_at) VALUES(?,?,?,?,?,?)',
                 (mid,'manual.txt','/tmp/manual.txt','test','texto',dbm.now()))

@@ -25,9 +25,9 @@ class WindowsUtf8BuildTests(unittest.TestCase):
 
     def test_javascript_is_utf8_not_cp1252(self):
         content=(ROOT/'web/app.js').read_bytes()
-        self.assertIn('EMPIEZA AQUÍ'.encode('utf-8'), content)
+        self.assertIn('ADMINISTRACIÓN Y GESTIÓN · CANARIAS'.encode('utf-8'), content)
         with self.assertRaises(UnicodeDecodeError):
             content.decode('cp1252')
-        self.assertIn('EMPIEZA AQUÍ',content.decode('utf-8'))
+        self.assertIn('ADMINISTRACIÓN Y GESTIÓN · CANARIAS',content.decode('utf-8'))
 
 if __name__=='__main__':unittest.main()

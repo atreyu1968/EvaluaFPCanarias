@@ -502,6 +502,7 @@ class Handler(BaseHTTPRequestHandler):
                 if path=='/api/national/catalog':
                     import fp_catalog
                     region=(args.get('region') or [''])[0]
+                    ag.ensure_territory(region)
                     year=(args.get('academic_year') or [''])[0]
                     search_term=(args.get('q') or [''])[0]
                     return self.send(fp_catalog.search(d,region,year,search_term))
@@ -743,11 +744,12 @@ class Handler(BaseHTTPRequestHandler):
         if path=='/api/national/catalog/preview':
             import fp_catalog
             # El ámbito de la tabla procede del formulario: solo se guarda tras confirmación.
-            territories.require_territory(body.get('region',''))
+            ag.ensure_territory(body.get('region',''))
             territories.year_code(body.get('academic_year',''))
             return self.send(fp_catalog.preview_table(body.get('table')))
         if path=='/api/national/catalog/import':
             import fp_catalog
+            ag.ensure_territory(body.get('region',''))
             with data.connect() as d:
                 result=fp_catalog.import_table(d,body.get('table'),
                     body.get('region',''),body.get('academic_year',''),

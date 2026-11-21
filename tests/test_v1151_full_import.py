@@ -172,7 +172,7 @@ class FullImportHttpTests(unittest.TestCase):
         with urllib.request.urlopen(req,timeout=25) as r:return json.loads(r.read())
 
     def test_preview_and_apply_are_safe_and_require_confirmation(self):
-        m=self.request('api/modules',{'academic_year':'2026-2027','cycle':'CFGS','name':'Demo importación','group_name':'A'})
+        m=self.request('api/modules',{'academic_year':'2026-2027','cycle':'CFGS Administración y Finanzas','name':'Demo importación','group_name':'A'})
         mid=m['id']
         with database.connect() as db:
             file=database.STORAGE/'programaciones'/f'prueba_{mid}.md'

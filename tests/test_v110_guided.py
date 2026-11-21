@@ -139,7 +139,7 @@ class GuidedHttpTests(unittest.TestCase):
 
     def test_http_save_diagnose_export_and_auth(self):
         import urllib.error
-        m=self.api('api/modules',{'academic_year':'2026-2027','cycle':'CFGM',
+        m=self.api('api/modules',{'academic_year':'2026-2027','cycle':'CFGM Gestión Administrativa',
              'name':'Ejemplo de asistente 1.1','group_name':'1A'})
         mid=m['id']
         summary=self.api(f'api/programming-builder/{mid}')

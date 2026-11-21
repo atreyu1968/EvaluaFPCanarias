@@ -21,10 +21,10 @@ class InstallerContractTests(unittest.TestCase):
         bat=(ROOT/'crear_instalador_windows.bat').read_text(encoding='utf-8')
         ps=(ROOT/'scripts/crear_instalador.ps1').read_text(encoding='utf-8-sig')
         self.assertIn('--selftest',bat)
-        self.assertIn('Instalar_EvaluaFP.exe',ps)
+        self.assertIn('Instalar_EvaluaFPCanarias.exe',ps)
         self.assertNotIn('Remove-Item -LiteralPath $Exe',ps)
     def test_iss_references_onefile_build_and_nonadmin_install(self):
         s=(ROOT/'instalador/EvaluaFP.iss').read_text(encoding='utf-8')
-        self.assertIn('Source: "..\\dist\\EvaluaFP.exe"',s)
+        self.assertIn('Source: "..\\dist\\EvaluaFPCanarias.exe"',s)
         self.assertIn('PrivilegesRequired=lowest',s)
 if __name__=='__main__': unittest.main()

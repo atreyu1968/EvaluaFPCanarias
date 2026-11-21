@@ -53,7 +53,7 @@ class HttpTests(unittest.TestCase):
         self.assertEqual(updated['rows'][0]['activity'],proposed['rows'][0]['activity'])
 
     def test_generated_models_problem_persistence_and_pdf_route(self):
-        m=self.req('api/modules',{'academic_year':'2026-2027','cycle':'CFGM','name':'Tesorería y compraventa','group_name':'A'})
+        m=self.req('api/modules',{'academic_year':'2026-2027','cycle':'CFGM Gestión Administrativa','name':'Tesorería y compraventa','group_name':'A'})
         mid=m['id']
         ra=self.req('api/outcomes',{'module_id':mid,'code':'RA5','description':'Operaciones de gestión','weight':100})
         ce=self.req('api/criteria',{'outcome_id':ra['id'],'code':'RA5.a','description':'Resuelve operaciones de compraventa','weight':100})
@@ -102,7 +102,7 @@ class HttpTests(unittest.TestCase):
 
     def test_additio_ra_ce_download_routes(self):
         """Se descargan currículo y notas desde la UI/HTTP sin depender de API de IA."""
-        m=self.req('api/modules',{'academic_year':'2026-2027','cycle':'CFGM',
+        m=self.req('api/modules',{'academic_year':'2026-2027','cycle':'CFGM Gestión Administrativa',
                       'name':'Prueba Additio FP','group_name':'1B'})
         mid=m['id']
         ra=self.req('api/outcomes',{'module_id':mid,'code':'RA2','description':'Gestiona operaciones','weight':100})
@@ -119,7 +119,7 @@ class HttpTests(unittest.TestCase):
         self.assertNotIn('Instrumento',notes)
 
     def test_manual_exam_ai_maps_two_criteria_with_teacher_approval(self):
-        m=self.req('api/modules',{'academic_year':'2026-2027','cycle':'CFGM',
+        m=self.req('api/modules',{'academic_year':'2026-2027','cycle':'CFGM Gestión Administrativa',
                     'name':'Contabilidad para asignación curricular','group_name':'1A'})
         ra=self.req('api/outcomes',{'module_id':m['id'],'code':'RA2',
                     'description':'Reconoce el método contable','weight':100})
@@ -150,7 +150,7 @@ class HttpTests(unittest.TestCase):
                          [(c1['id'],60),(c2['id'],40)])
 
     def test_full_flow_manual_exam_viewer_and_validation(self):
-        m=self.req('api/modules',{'academic_year':'2026-2027','cycle':'CFGM','name':'Técnica Contable','group_name':'1A'})
+        m=self.req('api/modules',{'academic_year':'2026-2027','cycle':'CFGM Gestión Administrativa','name':'Técnica Contable','group_name':'1A'})
         mid=m['id']
         ra=self.req('api/outcomes',{'module_id':mid,'code':'RA1','description':'RA de prueba','weight':100})
         ce=self.req('api/criteria',{'outcome_id':ra['id'],'code':'RA1.a','description':'CE de prueba','weight':100})
