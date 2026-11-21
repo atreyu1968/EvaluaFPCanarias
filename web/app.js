@@ -1600,7 +1600,7 @@ function renderEvalScores(){
  const ces=instrument.targets.map(t=>x.criteria.find(c=>c.id===t.criterion_id)).filter(Boolean);
  area.innerHTML=`<div class="actions"><button class="btn secondary" type="button" data-action="download-eval-template">Descargar plantilla CSV</button>
  ${instrument.exam_id?`<button class="btn secondary" type="button" data-action="sync-eval-exam" data-id="${instrument.id}">Importar notas validadas del examen</button>`:''}</div>
- <form id="eval-import" class="formrow" style="margin:15px 0"><input type="hidden" name="instrument_id" value="${iid}"><div class="field grow"><label>Importar notas CSV (codigo_alumno;criterio;nota;comentario)</label><input type="file" name="csv" accept=".csv,text/csv" required></div><button type="submit" class="btn secondary">Importar CSV</button></form>
+ <form id="eval-import" class="formrow" style="margin:15px 0"><input type="hidden" name="instrument_id" value="${iid}"><div class="field grow"><label>Importar notas CSV (codigo_alumno;criterio;nota;comentario). Indica RA/CE, por ejemplo RA1/a.</label><input type="file" name="csv" accept=".csv,text/csv" required></div><button type="submit" class="btn secondary">Importar CSV</button></form>
  <div class="table-wrap"><table><thead><tr><th>Alumno</th>${ces.map(c=>`<th>${E(c.ra_code)} · ${E(c.code)}</th>`).join('')}</tr></thead><tbody>
  ${x.students.map(st=>`<tr><td><strong>${E(st.name)}</strong><div class="small">${E(st.code)}</div></td>${ces.map(c=>{
  const rec=x.scores.find(r=>r.student_id===st.student_id&&r.instrument_id===iid&&r.criterion_id===c.id);
@@ -2755,7 +2755,9 @@ document.addEventListener('click',async event=>{
   const ins=S.evalData.instruments.find(i=>i.id===Number(S.evalInstrumentId));
   if(!ins)return;
   const csv='\ufeffcodigo_alumno;criterio;nota;comentario\r\n'+S.evalData.students.flatMap(st=>ins.targets.map(t=>{
-    const c=S.evalData.criteria.find(c=>c.id===t.criterion_id);return `${st.code};${c.code};;`;
+    const c=S.evalData.criteria.find(c=>c.id===t.criterion_id);
+    const quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+    return [quote(st.code),quote(c.ra_code+'/'+c.code),'',''].join(';');
   })).join('\r\n');
   downloadText(csv,'plantilla_notas_'+ins.id+'.csv','text/csv;charset=utf-8');return;
  }
