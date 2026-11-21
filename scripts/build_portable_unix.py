@@ -51,7 +51,9 @@ def build():
             '--specpath', str(ROOT/'build'/'unix'),
             '--add-data', f'{ROOT/"web"}{os.pathsep}web',
             '--add-data', f'{ROOT/"assets"}{os.pathsep}assets',
-            '--hidden-import', 'webview']
+            '--hidden-import', 'webview',
+            '--hidden-import', 'canarias_reference',
+            '--hidden-import', 'canarias_modules']
     if target == 'macos':
         args += ['--windowed', '--osx-bundle-identifier', 'org.evaluafpcanarias.local',
                  '--hidden-import', 'webview.platforms.cocoa']
