@@ -1,0 +1,172 @@
+name: Beta.5 - compilación y publicación preliminar
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+    paths: ['.github/workflows/beta5-release.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: beta5-release-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  tests:
+    if: github.repository == 'atreyu1968/EvaluaFPCanarias' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.head_ref == 'release/beta.5')
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: pip install -r requirements.txt
+      - name: Comprobar versión y sintaxis
+        run: |
+          python -c "from pathlib import Path; assert 'APP_VERSION = '+chr(34)+'1.2.10-AG-CN-beta.5'+chr(34) in Path('app.py').read_text(encoding='utf-8')"
+          python -m compileall -q app.py evaluacion.py canarias_backup.py
+      - run: node --check web/app.js
+      - run: python -m unittest discover -s tests -q
+  windows:
+    needs: tests
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install -r requirements-build.txt
+      - name: Compilar ejecutable de Windows
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name EvaluaFPCanarias --icon assets/EvaluaFP.ico --add-data "web;web" --add-data "assets;assets" --collect-all fitz --collect-all PIL --collect-all docx --collect-all keyring --collect-all webview --collect-all reportlab --collect-all cryptography --collect-all xlsxwriter --hidden-import xlwt --hidden-import webview.platforms.winforms --hidden-import desktop_caption --hidden-import general_calendar_library --hidden-import canarias_reference --hidden-import canarias_modules --hidden-import calendar_versions --hidden-import calendar_document --hidden-import calendar_annex --hidden-import calendar_ai --hidden-import canarias_backup --hidden-import common_scope_export app.py
+          if ($LASTEXITCODE -ne 0) { throw "Compilación fallida" }
+      - name: Autoprueba aislada y empaquetado
+        shell: pwsh
+        run: |
+          $base = Join-Path $PWD 'dist/portable-candidato'
+          New-Item -ItemType Directory -Path $base | Out-Null
+          Copy-Item dist/EvaluaFPCanarias.exe $base
+          Copy-Item README.md "$base/LEEME_CANARIAS.md"
+          Copy-Item docs/manuales/WINDOWS.md "$base/MANUAL_WINDOWS.md"
+          Copy-Item docs/manuales/DIDACTICO_CANARIAS.md "$base/GUIA_DIDACTICA.md"
+          '{"mode":"portable","data_dir":"EvaluaFPCanarias_Datos","backup_dir":"EvaluaFPCanarias_Copias"}' | Set-Content "$base/EvaluaFPCanarias.portable.json" -Encoding utf8
+          $homeTest = Join-Path $env:RUNNER_TEMP ([guid]::NewGuid().ToString())
+          New-Item -ItemType Directory -Path $homeTest | Out-Null
+          $env:EVALUAFP_CANARIAS_PORTABLE_HOME = $homeTest
+          $env:EVALUAFP_CANARIAS_PORTABLE = '1'
+          try {
+            $p = Start-Process -FilePath "$base/EvaluaFPCanarias.exe" -ArgumentList '--selftest' -PassThru
+            if (!$p.WaitForExit(180000)) { Stop-Process -Id $p.Id -Force; throw 'Autoprueba excedió el tiempo máximo' }
+            if ($p.ExitCode -ne 0) { throw "Autoprueba fallida: $($p.ExitCode)" }
+          } finally {
+            Remove-Item -Recurse -Force $homeTest
+          }
+          $name = 'dist/EvaluaFPCanarias_Portatil_1.2.10-AG-CN-beta.5_windows_x64.zip'
+          Compress-Archive -Path "$base/*" -DestinationPath $name -Force
+          $hash = (Get-FileHash $name -Algorithm SHA256).Hash.ToLower()
+          "$hash  $(Split-Path $name -Leaf)" | Set-Content "$name.sha256" -Encoding ascii
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta5-windows-x64
+          path: |
+            dist/EvaluaFPCanarias_Portatil_1.2.10-AG-CN-beta.5_windows_x64.zip
+            dist/EvaluaFPCanarias_Portatil_1.2.10-AG-CN-beta.5_windows_x64.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
+  unix:
+    needs: tests
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            name: linux-x64
+          - os: macos-15-intel
+            name: macos-intel
+          - os: macos-15
+            name: macos-arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Bibliotecas gráficas Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopengl0 libxkbcommon-x11-0 libxcb-cursor0 libnss3 libxcomposite1 libxdamage1 libxrandr2
+      - run: pip install -r requirements-build.txt
+      - run: python scripts/build_portable_unix.py --test
+      - name: Huella del paquete
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          for p in Path('dist').glob('EvaluaFPCanarias_Portatil_*'):
+              if p.is_file():
+                  with p.open('rb') as f:
+                      digest=hashlib.file_digest(f,'sha256').hexdigest()
+                  Path(str(p)+'.sha256').write_text(digest+'  '+p.name+'\n',encoding='ascii')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta5-${{ matrix.name }}
+          path: |
+            dist/EvaluaFPCanarias_Portatil_*.zip
+            dist/EvaluaFPCanarias_Portatil_*.tar.gz
+            dist/EvaluaFPCanarias_Portatil_*.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: [windows, unix]
+    if: github.repository == 'atreyu1968/EvaluaFPCanarias' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: beta5-*
+          merge-multiple: true
+          path: release-assets
+      - name: Validar cuatro paquetes y sus huellas
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release-assets
+          for platform in windows_x64 linux_x64 macos_x64 macos_arm64; do
+            ext=zip
+            if [ "$platform" = linux_x64 ]; then ext=tar.gz; fi
+            name="EvaluaFPCanarias_Portatil_1.2.10-AG-CN-beta.5_${platform}.${ext}"
+            test -s "$name"
+            test -s "$name.sha256"
+            sha256sum --check "$name.sha256"
+          done
+          test "$(find . -maxdepth 1 -name '*.sha256' | wc -l)" -eq 4
+      - name: Publicar versión preliminar sin sustituir publicaciones anteriores
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag=v1.2.10-AG-CN-beta.5
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "La versión ya existe; no se reemplaza automáticamente."
+            exit 1
+          fi
+          gh release create "$tag" --target "$GITHUB_SHA" --draft --prerelease --title "EvalúaFP Canarias 1.2.10 AG-CN beta.5" --notes-file docs/BETA5_RELEASE.md
+          gh release upload "$tag" release-assets/* docs/manuales/*.md
+          gh release edit "$tag" --draft=false --prerelease
