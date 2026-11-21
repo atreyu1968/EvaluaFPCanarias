@@ -168,10 +168,14 @@ def _suggest_schedule_hours(draft,db,module_id):
     module=db.execute('SELECT name,cycle,academic_year FROM modules WHERE id=?',(module_id,)).fetchone()
     import national_registry
     verified= national_registry.find_hours_for(db,dict(module),draft,territory.territory_code(draft.get('region','Canarias')))
-    # El anexo histórico de Canarias no se reutiliza como propuesta para cursos
-    # futuros cuya distribución horaria pudiera haber cambiado.
+    # Si el usuario eligió una referencia histórica de 2024, no propagar
+    # sus horas al calendario actual ni por coincidencia con el catálogo legado.
+    # Una fuente de horas contrastada por el docente (national_registry) conserva
+    # preferencia, pero tampoco se considera confirmada automáticamente.
+    import canarias_reference
+    captured_reference=canarias_reference.read(db,module_id)
     legacy=(official_catalog.find(draft.get('region','Canarias'),module['cycle'],module['name'],draft.get('official_module_code',''))
-            if module['academic_year']=='2026-2027' else None)
+            if module['academic_year']=='2026-2027' and captured_reference is None else None)
     proposal=verified or legacy
     if proposal:
         cfg['weekly_hours']=proposal['weekly_hours']
