@@ -98,6 +98,9 @@ def build():
     (staging/'EvaluaFPCanarias_Datos').mkdir()
     (staging/'EvaluaFPCanarias_Copias').mkdir()
     shutil.copy2(ROOT/'docs'/'PORTABLE_LINUX_MAC.md',staging/'LEEME_LINUX_MAC.md')
+    manual='MACOS.md' if target=='macos' else 'LINUX.md'
+    shutil.copy2(ROOT/'docs'/'manuales'/manual,staging/('MANUAL_'+manual))
+    shutil.copy2(ROOT/'docs'/'manuales'/'DIDACTICO_CANARIAS.md',staging/'GUIA_DIDACTICA.md')
     # Esta prueba NO requiere entorno gráfico, pero verifica que el empaquetado
     # puede cargar HTML, SQLite, exportaciones y pywebview.
     with tempfile.TemporaryDirectory(prefix='efp_selftest_') as test_home:
