@@ -31,3 +31,10 @@ Por defecto el proyecto utiliza SQLite local. Los directorios y variables de ent
 
 ## Política de independencia
 Proyecto derivado; las modificaciones se realizan exclusivamente en https://github.com/atreyu1968/EvaluaFPCanarias
+
+
+## Segunda fase: selector documental de módulos
+
+Se añade un índice orientativo de 46 módulos con código de las tres titulaciones de grado medio/superior, a partir del anexo VI del BOC 2024/226. La selección facilita la denominación, pero **no certifica vigencia 2026-2027, RA/CE ni horas**. No hay todavía catálogo indexado de Servicios Administrativos ni optativas específicas.
+
+[Detalles y fuente](INDICE_MODULOS_CANARIAS_AG.md).

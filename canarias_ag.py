@@ -83,6 +83,7 @@ def public_catalog() -> dict:
         "cycles": deepcopy(CYCLES),
         "sources": deepcopy(REGULATIONS),
         "module_catalog_status": "pendiente_de_contraste",
+        "module_reference_endpoint": "/api/canarias-ag/modules",
         "verified_modules": [],
         "verified_outcomes": [],
         "verified_criteria": [],

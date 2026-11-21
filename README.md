@@ -32,6 +32,21 @@ Los Grados A, B y C de la familia **no son equivalentes automáticamente a los G
 8. Conserva la importación/revisión de programaciones, RA/CE, evaluación, exámenes, informes, corrección asistida, FEOE y calendarios de la base.
 9. Fiscalidad didáctica canaria: los casos de tributación indirecta deben utilizar IGIC cuando corresponda y verificar los tipos aplicables.
 
+
+## Selección asistida de módulos (beta.2)
+
+En **Preparar módulo**, al seleccionar un ciclo, se consulta el índice documental de módulos de Gestión Administrativa, Administración y Finanzas y Asistencia a la Dirección. El docente puede elegir la denominación de la lista o escribirla manualmente.
+
+- **15 referencias** de CFGM Gestión Administrativa.
+- **16 referencias** de CFGS Administración y Finanzas.
+- **15 referencias** de CFGS Asistencia a la Dirección.
+- CFGB Servicios Administrativos se mantiene como entrada manual hasta comprobar el currículo de Grado Básico.
+- La optativa queda como entrada manual porque requiere la oferta concreta del centro.
+
+**Importante:** códigos, denominaciones y horas son una **referencia del Anexo VI de 2024**, no una certificación automática de vigencia para el curso 2026-2027. La aplicación NO rellena las horas de programación ni los RA/CE a partir de este índice.
+
+[Documentación del índice curricular](docs/INDICE_MODULOS_CANARIAS_AG.md).
+
 ## IMPORTANTE: fuentes y currículo
 
 Los **títulos** están identificados, pero esta beta **no contiene un catálogo de módulos, horas, RA y CE completo y validado para 2026-2027**. Para crear un módulo se elige su ciclo y se incorpora su programación o documentación oficial. La herramienta permite revisar y confirmar las propuestas del docente, sin certificar normas por IA ni inventar resultados.

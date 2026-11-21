@@ -172,6 +172,27 @@ function agCycleOptions(){
  return '<option value="" selected disabled>Seleccione un ciclo de Administración y Gestión</option>'+
    AG_CYCLES.map(c=>'<option value="'+E(c.name)+'">'+E(c.grade+' · '+c.name.replace(/^CFG[BMS]+\s+/,''))+'</option>').join('');
 }
+
+async function loadAGModuleSuggestions(form){
+ const list=form.querySelector('#ag-module-list'), note=form.querySelector('#ag-module-note');
+ if(!list||!note)return;
+ const cycle=form.elements.cycle?.value||'', year=form.elements.academic_year?.value||'';
+ list.innerHTML='';
+ if(!cycle){note.textContent='Seleccione un ciclo para consultar sus módulos.';return;}
+ note.textContent='Consultando módulos de referencia de Canarias…';
+ try{
+   const data=await API('/api/canarias-ag/modules?cycle='+encodeURIComponent(cycle)+
+      '&academic_year='+encodeURIComponent(year));
+   if(!form.isConnected||form.elements.cycle?.value!==cycle||form.elements.academic_year?.value!==year)return;
+   list.innerHTML=(data.modules||[]).map(m=>'<option value="'+E(m.name)+
+     '" label="'+E((m.code||'Sin código')+' · '+m.course+'º · '+m.reference_annual_hours+' h de referencia')+'"></option>').join('');
+   note.textContent=data.count?
+      data.count+' módulos del anexo VI de 2024. Seleccione una denominación o escriba otra. Las horas y la vigencia 2026-2027 deben verificarse; no se importan automáticamente.':
+      'El índice de módulos de Grado Básico está pendiente. Escriba el módulo según su currículo oficial.';
+ }catch(err){
+   if(form.isConnected)note.textContent='No se ha podido consultar el índice de módulos. Puede escribir la denominación manualmente.';
+ }
+}
 function resolveAGCycle(text){
  const norm=String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  if(norm.includes('servicios administrativos'))return 'CFGB Servicios Administrativos';
@@ -928,7 +949,7 @@ async function viewPrepare(){
  <div class="field"><label>Curso académico</label><input name="academic_year" required value="2026-2027"></div>
  <div class="field"><label>Comunidad autónoma / ámbito educativo</label><select name="territory" required>${territoryOptions('Canarias')}</select></div>
  <div class="field"><label>Ciclo formativo</label><select name="cycle" required>${agCycleOptions()}</select></div>
- <div class="field"><label>Nombre del módulo</label><input name="name" required placeholder="Técnica Contable"></div>
+ <div class="field"><label>Nombre del módulo</label><input name="name" required list="ag-module-list" placeholder="Selecciona del listado o escribe el nombre"><datalist id="ag-module-list"></datalist><p class="small" id="ag-module-note">Elige un ciclo para consultar módulos de referencia.</p></div>
  <div class="field"><label>Grupo (opcional)</label><input name="group_name" placeholder="1.º A"></div>
  <input type="hidden" name="catalog_entry_id"><p class="small" data-catalog-selection></p>
  <button class="btn" type="submit">Crear módulo y continuar</button></form></section>${catalogPanel()}`;return;}
@@ -1107,7 +1128,7 @@ async function viewPrograms(){
  <div class="field"><label>Curso académico</label><input required name="academic_year" value="2026-2027" placeholder="2026-2027"></div>
  <div class="field"><label>Comunidad autónoma / ámbito educativo</label><select name="territory" required>${territoryOptions('Canarias')}</select></div>
  <div class="field"><label>Ciclo formativo</label><select required name="cycle">${agCycleOptions()}</select></div>
- <div class="field"><label>Módulo profesional</label><input required name="name" placeholder="Técnica Contable"></div>
+ <div class="field"><label>Módulo profesional</label><input required name="name" list="ag-module-list" placeholder="Selecciona del listado o escribe el nombre"><datalist id="ag-module-list"></datalist><p class="small" id="ag-module-note">Elige un ciclo para consultar módulos de referencia.</p></div>
  <div class="field"><label>Grupo</label><input name="group_name" placeholder="1.º A"></div>
  <input type="hidden" name="catalog_entry_id"><p class="small" data-catalog-selection></p>
  <button class="btn" type="submit">Crear módulo</button></form></div>
@@ -1646,6 +1667,7 @@ document.addEventListener('change',async event=>{
       const note=form.querySelector('[data-catalog-selection]');
       if(note)note.textContent='Selección del catálogo anulada al modificar el módulo o el ámbito.';
    }
+   if(el.name==='cycle'||el.name==='academic_year')await loadAGModuleSuggestions(form);
    if(el.name==='territory'||el.name==='academic_year'){
       S.catalogResults=null;S.catalogPreview=null;S.catalogPreviewScope=null;updateCatalogResults();
       S.todofpResult=null;S.todofpTitleSearch=null; // No arrastrar títulos o fuentes de otro curso/territorio.
