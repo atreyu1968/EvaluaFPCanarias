@@ -75,7 +75,7 @@ class CanaryBasicCurriculumTests(unittest.TestCase):
     def test_scopes_and_obsolete_modules_are_not_suggested(self):
         for name in ('Formación en centros de trabajo','Comunicación y sociedad I',
                      'Ciencias aplicadas I','Lengua castellana y Ciencias sociales',
-                     'Matemáticas y Ciencias aplicadas','Itinerario personal para la empleabilidad'):
+                     'Matemáticas y Ciencias aplicadas'):
             self.assertIsNone(co.source_hint(name,co.GB_CYCLE))
         self.assertIsNone(co.source_hint('Técnica contable',co.GB_CYCLE))
         with patch('curriculum_official.urllib.request.urlopen') as get:

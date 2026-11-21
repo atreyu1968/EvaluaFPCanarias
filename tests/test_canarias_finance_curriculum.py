@@ -86,8 +86,8 @@ class CanaryFinanceCurriculumTests(unittest.TestCase):
         self.assertEqual(co.source_hint(name,co.AD_CYCLE)['boe_id'],'BOE-A-2011-19531')
         self.assertIsNone(co.source_hint(name,co.GA_CYCLE))
         self.assertIsNone(co.source_hint('Técnica Contable',co.AF_CYCLE))
-        for name in ('Inglés profesional (GS)', 'Sostenibilidad aplicada al sistema productivo',
-                     'Proyecto intermodular de administración y finanzas'):
+        for name in ('Inglés profesional (GM)', 'Digitalización aplicada a los sectores productivos (GM)',
+                     'Proyecto intermodular de asistencia a la dirección'):
             self.assertIsNone(co.source_hint(name,co.AF_CYCLE))
         with patch('curriculum_official.urllib.request.urlopen') as request:
             with self.assertRaisesRegex(ValueError,'otro ciclo'):

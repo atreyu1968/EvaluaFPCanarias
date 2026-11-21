@@ -48,7 +48,7 @@ class CanaryManagementCurriculumTests(unittest.TestCase):
         self.assertEqual(sum(source=='BOE-A-2009-19148' for source,code in co.EXPECTED_COVERAGE),9)
         self.assertEqual(sum(len(t[2]) for t in MODULES),54)
         self.assertEqual(sum(sum(t[2]) for t in MODULES),440)
-        for name in ('Inglés','Inglés profesional (GM)','FOL','Itinerario personal para la empleabilidad I','Proyecto intermodular'):
+        for name in ('Inglés','FOL','Formación en centros de trabajo'):
             self.assertIsNone(co.source_hint(name))
 
     def test_every_registered_module_and_actual_heading_variants(self):

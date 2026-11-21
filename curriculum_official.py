@@ -59,6 +59,18 @@ GB_SUPPORTED = {
     'preparacion de pedidos y venta de productos': ('BOE-A-2014-2360', '3006'),
 }
 EXPECTED_COVERAGE = {
+    ('BOE-A-2023-16889', '3159'): (5, 5, 3, 3, 4),
+    ('BOE-A-2023-16889', '1709'): (3, 9, 7, 11, 9),
+    ('BOE-A-2023-16889', '1710'): (4, 7, 6, 9, 9),
+    ('BOE-A-2023-16889', '1664'): (6, 6, 5, 8, 8),
+    ('BOE-A-2023-16889', '1665'): (7, 7, 5, 6, 9, 11),
+    ('BOE-A-2023-16889', '1708'): (6, 5, 3, 6, 9, 5),
+    ('BOE-A-2023-16889', '0156'): (9, 9, 13, 10, 5),
+    ('BOE-A-2023-16889', '0179'): (8, 10, 11, 8, 6),
+    ('BOE-A-2024-10683', '3160'): (9, 5, 5, 4, 4),
+    ('BOE-A-2024-10684', '1713'): (9, 11, 9, 6, 4),
+    ('BOE-A-2011-19533', '0657'): (9, 9, 8, 7),
+    ('BOE-A-2011-19531', '0664'): (9, 9, 8, 7),
     ('BOE-A-2014-2360', '3001'): (7, 10, 7, 10),
     ('BOE-A-2014-2360', '3002'): (7, 7, 6, 6),
     ('BOE-A-2014-2360', '3003'): (5, 9, 9, 8),
@@ -100,6 +112,37 @@ GB_CYCLE = 'CFGB Servicios Administrativos'
 GA_CYCLE = 'CFGM Gestión Administrativa'
 AF_CYCLE = 'CFGS Administración y Finanzas'
 AD_CYCLE = 'CFGS Asistencia a la Dirección'
+# Fuentes transversales de la ordenación vigente, separadas por nivel.
+TRANSVERSAL_BY_CYCLE = {
+    GB_CYCLE: {
+        'itinerario personal para la empleabilidad': ('BOE-A-2023-16889', '3159'),
+        'proyecto intermodular de aprendizaje colaborativo': ('BOE-A-2024-10683', '3160'),
+    },
+    GA_CYCLE: {
+        'itinerario personal para la empleabilidad i': ('BOE-A-2023-16889', '1709'),
+        'itinerario personal para la empleabilidad ii': ('BOE-A-2023-16889', '1710'),
+        'digitalizacion aplicada a los sectores productivos (gm)': ('BOE-A-2023-16889', '1664'),
+        'sostenibilidad aplicada al sistema productivo': ('BOE-A-2023-16889', '1708'),
+        'ingles profesional (gm)': ('BOE-A-2023-16889', '0156'),
+        'proyecto intermodular': ('BOE-A-2024-10684', '1713'),
+    },
+    AF_CYCLE: {
+        'itinerario personal para la empleabilidad i': ('BOE-A-2023-16889', '1709'),
+        'itinerario personal para la empleabilidad ii': ('BOE-A-2023-16889', '1710'),
+        'digitalizacion aplicada a los sectores productivos (gs)': ('BOE-A-2023-16889', '1665'),
+        'sostenibilidad aplicada al sistema productivo': ('BOE-A-2023-16889', '1708'),
+        'ingles profesional (gs)': ('BOE-A-2023-16889', '0179'),
+        'proyecto de administracion y finanzas': ('BOE-A-2011-19533', '0657'),
+    },
+    AD_CYCLE: {
+        'itinerario personal para la empleabilidad i': ('BOE-A-2023-16889', '1709'),
+        'itinerario personal para la empleabilidad ii': ('BOE-A-2023-16889', '1710'),
+        'digitalizacion aplicada a los sectores productivos (gs)': ('BOE-A-2023-16889', '1665'),
+        'sostenibilidad aplicada al sistema productivo': ('BOE-A-2023-16889', '1708'),
+        'ingles profesional (gs)': ('BOE-A-2023-16889', '0179'),
+        'proyecto de asistencia a la direccion': ('BOE-A-2011-19531', '0664'),
+    },
+}
 ORIGINAL_TITLE_BY_CYCLE = {
     GB_CYCLE: 'BOE-A-2014-2360',
     GA_CYCLE: 'BOE-A-2009-19148',
@@ -107,6 +150,16 @@ ORIGINAL_TITLE_BY_CYCLE = {
     AD_CYCLE: 'BOE-A-2011-19531',
 }
 TITLE_LINKS = {
+    'BOE-A-2023-16889': {
+        'state_title':'https://www.boe.es/eli/es/rd/2023/07/18/659/con',
+        'state_amendment':'https://www.boe.es/eli/es/rd/2024/07/09/658',
+    },
+    'BOE-A-2024-10683': {
+        'state_title':'https://www.boe.es/eli/es/rd/2024/05/21/498/con',
+    },
+    'BOE-A-2024-10684': {
+        'state_title':'https://www.boe.es/eli/es/rd/2024/05/21/499/con',
+    },
     'BOE-A-2014-2360': {
         'state_title':'https://www.boe.es/eli/es/rd/2014/02/28/127/con',
         'state_amendment':'https://www.boe.es/eli/es/rd/2024/05/21/498',
@@ -161,6 +214,9 @@ def _module_key(value):
     name = " ".join(_norm(value).strip(" .").split())
     name = re.sub(r'\s*\.?\s*equivalencia en creditos ects\.?$', '', name).strip(' .')
     aliases = {
+        'proyecto intermodular de aprendizaje colaborativo (gb)': 'proyecto intermodular de aprendizaje colaborativo',
+        'proyecto intermodular de administracion y finanzas': 'proyecto de administracion y finanzas',
+        'proyecto intermodular de asistencia a la direccion': 'proyecto de asistencia a la direccion',
         'operaciones administrativas de compra-venta': 'operaciones administrativas de compraventa',
         'operaciones administrativas de la compra-venta': 'operaciones administrativas de compraventa',
         'operaciones administrativas de la compraventa': 'operaciones administrativas de compraventa',
@@ -183,6 +239,9 @@ def _cycle_key(cycle):
 def _template_for(module_name, cycle=None):
     key = _module_key(module_name)
     cycle = _cycle_key(cycle)
+    transverse = TRANSVERSAL_BY_CYCLE.get(cycle, {}).get(key)
+    if transverse:
+        return transverse
     if cycle == GB_CYCLE:
         return GB_SUPPORTED.get(key)
     if cycle == GA_CYCLE:
@@ -192,6 +251,9 @@ def _template_for(module_name, cycle=None):
     if cycle == AD_CYCLE:
         return AD_SUPPORTED.get(key)
     if cycle is None:  # Compatibilidad para clientes antiguos.
+        common = {reg[key] for reg in TRANSVERSAL_BY_CYCLE.values() if key in reg}
+        if common:
+            return next(iter(common)) if len(common)==1 else None
         # Sin ciclo no se elige arbitrariamente entre dos títulos.
         candidates = [reg[key] for reg in (SUPPORTED, AF_SUPPORTED, AD_SUPPORTED, GB_SUPPORTED) if key in reg]
         return candidates[0] if len(candidates) == 1 else None
@@ -209,7 +271,10 @@ def source_hint(module_name, cycle=None):
         'boe_id': boe_id, 'module_code': code,
         'source_url': 'https://www.boe.es/diario_boe/txt.php?id=' + boe_id,
         'expected_ra': len(counts), 'expected_ce': sum(counts),
-        'status': 'original_state_source_requires_review',
+        'status': ('source_label_conflict_requires_review' if code=='1713'
+                   else 'original_state_source_requires_review'),
+        'notice': ('El RA5 contiene dos CE a) en el BOE original: revise la numeración antes de importar.'
+                   if code=='1713' else 'Referencia estatal; contraste vigencia y normativa canaria.'),
     }
 
 
@@ -237,7 +302,8 @@ def parse_curriculum(document_text, module_name, expected_code=None):
     # El bloque debe contener un encabezado inequívoco con nombre y código del módulo.
     marker=re.compile(
         r'M[oó]dulo\s+Profesional\s*:\s*([^\r\n]{1,220}?)'
-        r'\s*\.?\s*(?:Equivalencia\s+en\s+cr[eé]ditos\s+ECTS\s*:\s*\d{1,3}\s*)?'
+        r'\s*\.?\s*(?:(?:Equivalencia\s+en\s+cr[eé]ditos\s+ECTS'
+        r'(?:\s*\([^)\r\n]{1,100}\))?|Duraci[oó]n)\s*:\s*[^\r\n]{1,100}\s*){0,2}'
         r'C[oó]digo\s*:\s*(\d{4})(?!\d)', re.IGNORECASE)
     wanted = _module_key(module_name)
     found = [match for match in marker.finditer(txt)
@@ -247,7 +313,7 @@ def parse_curriculum(document_text, module_name, expected_code=None):
     block=None;code=None
     for match in found:
         candidate=txt[match.end():]
-        following=re.search(r'M[oó]dulo\s+Profesional\s*:',candidate,re.IGNORECASE)
+        following=re.search(r'M[oó]dulo\s+Profesional\s*:|(?m:^[ \t]*ANEXO[ \t]+[IVXLCDM]+[ \t]*$)',candidate,re.IGNORECASE)
         if following:candidate=candidate[:following.start()]
         if re.search(r'Resultados de aprendizaje y criterios de evaluaci[oó]n',candidate,re.I):
             block=candidate;code=match.group(2);break
@@ -265,7 +331,9 @@ def parse_curriculum(document_text, module_name, expected_code=None):
         # El RA4 de 0651 se publica sin punto después del número.
         m=re.match(r'^([1-9]\d?)(?:\.\s+|\s+(?=[A-ZÁÉÍÓÚÜÑ]))(.+)',line)
         if m:
-            current={'code':'RA'+m.group(1),'description':m.group(2),'weight':None,'criteria':[]}
+            # Algunos anexos de 2023 sitúan el rótulo CE al final del RA.
+            description=re.sub(r'\s+Criterios de evaluaci[oó]n\s*[:.]?\s*$', '', m.group(2),flags=re.I)
+            current={'code':'RA'+m.group(1),'description':description,'weight':None,'criteria':[]}
             ras.append(current);criterion=None;continue
         c=re.match(r'^([a-z])\)\s+(.+)',line,re.I)
         if c and current:
@@ -318,6 +386,13 @@ def fetch_official(module_name, boe_id=None, consent=False, cycle=None):
     if not BOE_PATTERN.fullmatch(boe_id):
         raise ValueError('Introduzca un identificador oficial BOE-A-AAAA-NNN válido.')
     title_source = ORIGINAL_TITLE_BY_CYCLE.get(_cycle_key(cycle))
+    # Impedir que un módulo transversal de otro nivel se importe usando su nombre.
+    key = _module_key(module_name)
+    transversals = {k for reg in TRANSVERSAL_BY_CYCLE.values() for k in reg}
+    if cycle and key in transversals and not TRANSVERSAL_BY_CYCLE.get(_cycle_key(cycle), {}).get(key):
+        raise ValueError('El módulo transversal o proyecto corresponde a otro nivel o título.')
+    if cycle and template and key in transversals and boe_id != template[0]:
+        raise ValueError('Utilice la disposición específica de este módulo transversal; revise otra fuente manualmente.')
     if title_source and boe_id in ORIGINAL_TITLE_BY_CYCLE.values() and boe_id != title_source:
         raise ValueError('La disposición original corresponde a otro ciclo formativo.')
     url='https://www.boe.es/diario_boe/txt.php?id='+boe_id
@@ -342,6 +417,10 @@ def fetch_official(module_name, boe_id=None, consent=False, cycle=None):
     parsed=parse_curriculum(document,module_name,expected)
     counts=EXPECTED_COVERAGE.get((boe_id, parsed['module_code']))
     if counts:
+        if (boe_id, parsed['module_code']) == ('BOE-A-2024-10684', '1713'):
+            # El original repite a) en RA5. No renumerar ni perder un criterio.
+            if [ce['code'] for ce in parsed['outcomes'][-1]['criteria']] == ['RA5.a','RA5.a','RA5.b','RA5.c']:
+                raise ValueError('El BOE original de 1713 repite a) en RA5. Revise la fuente y resuelva la numeración mediante revisión documental antes de importar.')
         check_coverage(parsed['outcomes'], counts)
         parsed['reference_coverage']={
             'expected_ra':len(counts), 'expected_ce':sum(counts),

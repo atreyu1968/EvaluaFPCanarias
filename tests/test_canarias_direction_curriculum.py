@@ -66,8 +66,8 @@ class CanaryDirectionCurriculumTests(unittest.TestCase):
                         co.fetch_official(name,consent=True,cycle=co.AD_CYCLE)
 
     def test_no_automatic_import_of_transversal_or_wrong_title(self):
-        for name in ('Inglés profesional (GS)','Proyecto intermodular de asistencia a la dirección',
-                     'Sostenibilidad aplicada al sistema productivo','Contabilidad y fiscalidad'):
+        for name in ('Inglés profesional (GM)','Proyecto intermodular de administración y finanzas',
+                     'Digitalización aplicada a los sectores productivos (GM)','Contabilidad y fiscalidad'):
             self.assertIsNone(co.source_hint(name,co.AD_CYCLE))
         self.assertIsNone(co.source_hint('Segunda lengua extranjera',co.AF_CYCLE))
         self.assertIsNone(co.source_hint('Protocolo empresarial',co.AF_CYCLE))

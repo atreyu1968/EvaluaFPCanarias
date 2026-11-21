@@ -172,3 +172,24 @@ Se incorporan las seis referencias profesionales del anexo I del [RD 127/2014](h
 | 3004 | Archivo y comunicación | 4 | 35 |
 | 3005 | Atención al cliente | 4 | 31 |
 | 3006 | Preparación de pedidos y venta de productos | 4 | 25 |
+
+## Módulos transversales y proyectos intermodulares
+
+Se incorporan las referencias de los anexos III y V–X del RD 659/2023, el proyecto GB (RD 498/2024), el proyecto GM (RD 499/2024) y los proyectos específicos de GS, con las denominaciones actualizadas conforme al RD 500/2024. La fuente de 1713 contiene una repetición de a) en RA5: se bloquea su importación automática si se detecta esta numeración. No se renumera silenciosamente. Los ámbitos de GB y las optativas requieren fuentes y estructuras propias.
+
+| Código | Referencia | RA | CE |
+|---|---|---:|---:|
+| 3159 | itinerario personal para la empleabilidad | 5 | 20 |
+| 1709 | itinerario personal para la empleabilidad i | 5 | 39 |
+| 1710 | itinerario personal para la empleabilidad ii | 5 | 35 |
+| 1664 | digitalizacion aplicada a los sectores productivos (gm) | 5 | 33 |
+| 1665 | digitalizacion aplicada a los sectores productivos (gs) | 6 | 45 |
+| 1708 | sostenibilidad aplicada al sistema productivo | 6 | 34 |
+| 0156 | ingles profesional (gm) | 5 | 46 |
+| 0179 | ingles profesional (gs) | 5 | 43 |
+| 3160 | proyecto intermodular de aprendizaje colaborativo | 5 | 27 |
+| 1713 | proyecto intermodular | 5 | 39 |
+| 0657 | proyecto de administracion y finanzas | 4 | 33 |
+| 0664 | proyecto de asistencia a la direccion | 4 | 33 |
+
+Los recuentos corresponden a las publicaciones estatales cotejadas, no a un certificado de currículo vigente en Canarias. La consulta sigue requiriendo conexión y revisión docente.
