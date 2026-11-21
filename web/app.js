@@ -979,7 +979,7 @@ function commonScopeMarkup(info){
  });
  return `<section class="welcome-card"><p class="welcome-kicker">CFGB · ÁMBITOS COMUNES</p><h2>${E(p.ambito)}</h2><p>Borrador de aportación de la materia al ámbito. No es una calificación oficial independiente ni un currículo completo del ámbito.</p></section>
  <section class="panel"><h2>Fuente y revisión</h2><p><a href="${E(p.source_url)}" target="_blank" rel="noopener noreferrer">${E(p.source_title)}</a> · <a href="${E(p.annex_url)}" target="_blank" rel="noopener noreferrer">Anexo de ámbitos comunes (PDF)</a>.</p>
- <p>Transcribe las competencias y los criterios que se trabajan en tu programación. Conserva la numeración del ámbito; no se generan RA ni se asignan pesos automáticamente.</p><p>Guardado: ${E(info.updated_at||'Sin borrador guardado')}</p></section>
+ <p>Transcribe las competencias y los criterios que se trabajan en tu programación. Conserva la numeración del ámbito; no se generan RA ni se asignan pesos automáticamente.</p><p>Guardado: ${E(info.updated_at||'Sin borrador guardado')}</p></section><section class="panel"><h2>Consultar currículo del ámbito</h2><p>Obtén una referencia completa del ámbito y selecciona los elementos de tu materia. No se modifica el borrador guardado.</p><button type="button" class="btn secondary" data-action="scope-official">Consultar anexo oficial</button><div id="scope-official-preview"></div></section>
  <form id="common-scope-draft">${rows.join('')}<section class="panel"><div class="field"><label>Saberes básicos de la materia (bloques y enunciados)</label><textarea name="saberes" rows="8">${E(d.saberes)}</textarea></div>
  <label class="checkbox-card"><input type="checkbox" name="teacher_reviewed" ${d.teacher_reviewed?'checked':''}> He contrastado los elementos introducidos con la fuente oficial. Esta revisión no certifica la totalidad del ámbito.</label>
  <button class="btn" type="submit">Guardar borrador competencial</button></section></form>`;
@@ -2321,6 +2321,31 @@ document.addEventListener('click',async event=>{
    if(!confirm('Se enviará el texto de la programación al proveedor de IA configurado. No incluya datos personales innecesarios. ¿Autoriza el análisis?'))return;
    const result=await busy(()=>API('/api/programmings/analyze','POST',{programming_id:id}));
    if(result){S.proposal=result;await page('preparar');}return;
+ }
+ if(action==='scope-official'){
+   if(!confirm('Se descargará el PDF institucional del anexo 1. ¿Autoriza la consulta?'))return;
+   const mid=Number(S.moduleId),target=$('#scope-official-preview');
+   const result=await busy(()=>API('/api/common-scopes/official','POST',{module_id:mid,authorize_official_query:true}));
+   if(!result||Number(S.moduleId)!==mid||$('#scope-official-preview')!==target)return;
+   S.commonScopeReference={mid,result};
+   target.innerHTML=`<p class="hint warning">${E(result.notice)}</p><p class="small">${E(result.consulted_at)} · SHA-256 ${E(result.source_sha256)}</p>`+
+     result.competencies.map(c=>`<details><summary>Competencia ${E(c.code)} · ${c.criteria.length} criterios</summary><p>${E(c.description)}</p><p class="small">${E(c.descriptors)}</p><ul>${c.criteria.map(ce=>`<li>${E(ce.code)}. ${E(ce.description)} <small>${E(ce.descriptors)}</small></li>`).join('')}</ul><button class="btn secondary smallbtn" type="button" data-action="scope-copy-competency" data-code="${E(c.code)}">Añadir al borrador sin guardar</button></details>`).join('')+
+     `<details><summary>Saberes básicos del ámbito · referencia completa</summary><textarea rows="12" readonly>${E(result.saberes_reference)}</textarea></details>`;
+   return;
+ }
+ if(action==='scope-copy-competency'){
+   const ref=S.commonScopeReference;
+   if(!ref||ref.mid!==Number(S.moduleId))return;
+   const c=ref.result.competencies.find(x=>x.code===el.dataset.code);
+   const block=Array.from(document.querySelectorAll('.scope-competency')).find(x=>x.dataset.code===el.dataset.code);
+   if(!c||!block)return;
+   if(Array.from(block.querySelectorAll('textarea,input')).some(x=>x.value.trim())){toast('La competencia contiene datos; no se sobrescribe. Revísala manualmente.',true);return;}
+   block.querySelector('[name=scope-description]').value=c.description;
+   block.querySelector('[name=scope-descriptors]').value=c.descriptors;
+   block.querySelector('[name=scope-criteria]').value=c.criteria.map(x=>[x.code,x.description,x.descriptors].join(' | ')).join('\n');
+   block.closest('details').open=true;
+   const checked=$('#common-scope-draft [name=teacher_reviewed]');if(checked)checked.checked=false;
+   toast('Competencia añadida al formulario. Revisa y guarda el borrador.');return;
  }
  if(action==='guided-boc'){
    if(!confirm('Se consultará el BOC de Canarias. Contraste el PDF firmado y revise los RA y CE antes de guardarlos. ¿Continuar?'))return;
