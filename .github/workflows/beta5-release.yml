@@ -70,7 +70,7 @@ jobs:
           $name = 'dist/EvaluaFPCanarias_Portatil_1.2.10-AG-CN-beta.5_windows_x64.zip'
           Compress-Archive -Path "$base/*" -DestinationPath $name -Force
           $hash = (Get-FileHash $name -Algorithm SHA256).Hash.ToLower()
-          "$hash  $(Split-Path $name -Leaf)" | Set-Content "$name.sha256" -Encoding ascii
+          [System.IO.File]::WriteAllText((Join-Path $PWD "$name.sha256"), "$hash  $(Split-Path $name -Leaf)`n", [System.Text.Encoding]::ASCII)
       - uses: actions/upload-artifact@v4
         with:
           name: beta5-windows-x64
@@ -127,8 +127,24 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  manuals:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install "reportlab>=4.2,<5" "PyMuPDF>=1.24,<2"
+      - run: python scripts/build_manuals_pdf.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta5-manuals
+          path: dist/manuales/*.pdf
+          if-no-files-found: error
+          retention-days: 30
   publish:
-    needs: [windows, unix]
+    needs: [windows, unix, manuals]
     if: github.repository == 'atreyu1968/EvaluaFPCanarias' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
@@ -156,6 +172,7 @@ jobs:
             sha256sum --check "$name.sha256"
           done
           test "$(find . -maxdepth 1 -name '*.sha256' | wc -l)" -eq 4
+          test "$(find . -maxdepth 1 -name 'EvaluaFPCanarias_beta5_*.pdf' | wc -l)" -eq 4
       - name: Publicar versión preliminar sin sustituir publicaciones anteriores
         env:
           GH_TOKEN: ${{ github.token }}
