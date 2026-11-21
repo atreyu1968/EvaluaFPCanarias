@@ -64,7 +64,7 @@ let navigationController = null;
 let navigationRevision = 0;
 async function API(path, method='GET', payload=null){
  const isRead=method.toUpperCase()==='GET';
- const timeout= isRead ? 20000 : (path.includes('/api/programming-builder/propose')||path.includes('/api/programming-builder/improve')||path.includes('/api/programming-builder/enrich-units') ? 240000 : 180000);
+ const timeout=path==='/api/backup/recover'?600000:isRead ? 20000 : (path.includes('/api/programming-builder/propose')||path.includes('/api/programming-builder/improve')||path.includes('/api/programming-builder/enrich-units') ? 240000 : 180000);
  const controller=new AbortController();
  const navigationSignal=isRead ? navigationController?.signal : null;
  const onNavigationAbort=()=>controller.abort('navigation');
@@ -112,7 +112,9 @@ async function page(name){
  const revision=++navigationRevision;
  if(navigationController)navigationController.abort('navigation');
  navigationController=new AbortController();
- S.page=name;$('#page-title').textContent=titles()[name]||name;
+ S.page=name;
+ if(['feoe','expediente','decisiones','programaciones','ajustes'].includes(name)){S.advanced=true;syncMode();}
+ $('#page-title').textContent=titles()[name]||name;
  $all('[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===name));
  setLoading();
  try{
@@ -199,26 +201,23 @@ async function viewFeoe(){
  ${roster&&info.companies.length&&roster.students.length?`<form id="feoe-stay" class="formgrid"><div class="field"><label>Alumno</label><select name="student_id">${opt(roster.students,null,x=>x.name+' · '+x.code)}</select></div><div class="field"><label>Empresa</label><select name="company_id">${opt(info.companies,null,x=>x.name+' · '+x.workplace)}</select></div>${input('center_tutor','Tutor del centro')}${input('company_tutor','Tutor de empresa')}<div class="field"><label>Régimen</label><select name="regime"><option value="general">General</option><option value="intensivo">Intensivo</option></select></div><div class="field"><label>Inicio</label><input type="date" name="start_date" required></div><div class="field"><label>Fin</label><input type="date" name="end_date" required></div><div class="field"><label>Horas previstas</label><input type="number" name="planned_hours" min="0.01" max="2000" step="0.01" required></div><div class="field"><label>Horario y calendario previsto</label><textarea name="schedule" required maxlength="4000"></textarea></div>${[['convenio','Convenio'],['plan','Plan formativo'],['prl','Acreditación de competencias PRL'],['anexo_v','Anexo V o constancia de aplicabilidad'],['edad','Comprobación de edad'],['incorporacion','Autorización o constancia documental de incorporación']].map(([k,l])=>input(k,l)).join('')}<button type="submit" class="btn">Registrar estancia</button></form>`:''}</section>
  <section class="panel"><h2>Estancias registradas</h2><form id="feoe-select"><select name="stay_id">${opt(info.stays,S.feoeStay,x=>x.student_name+' · '+x.company_name+' · '+x.start_date)}</select><button type="submit" class="btn secondary">Abrir estancia</button></form></section>${feoeDetail(info)}`;
 }
+function syncMode(){
+ $('#advanced-nav').hidden=!S.advanced;
+ const toggle=$('#toggle-advanced');toggle.textContent=S.advanced?'Cambiar a modo guiado':'Cambiar a modo avanzado';
+ toggle.setAttribute('aria-expanded',String(S.advanced));
+ document.body.classList.toggle('advanced-mode',S.advanced);
+}
 async function viewHome(){
  await listModules();
- const hasModule=S.modules.length>0;
  const selected=S.modules.find(m=>Number(m.id)===Number(S.moduleId))||S.modules[0];
- if(selected&&!S.moduleId)S.moduleId=selected.id;
- const cards=[
- ['preparar','▤','Preparar mi módulo','Importar una programación, crear un borrador o configurar RA y CE.'],
- ['examenes','✎','Crear una prueba','Generar un examen o utilizar tus propias preguntas.'],
- ['entregas','▧','Corregir trabajos','Cargar PDF o fotografías y revisar propuestas de corrección.'],
- ['evaluacion','▥','Ver la evaluación','Consultar notas por RA y CE y preparar exportaciones.'],
- ['decisiones','✓','Comprobar decisiones académicas','Promoción, permanencia, acceso a empresa y titulación.'],
- ['expediente','▤','Expediente académico','Cierres, antecedentes y acuerdos del ciclo.'],
- ['feoe','▣','Formación en empresa','Empresas, planes, asistencia y valoración de RA.']];
- $('#main').innerHTML=`<div class="welcome-card"><p class="welcome-kicker">ADMINISTRACIÓN Y GESTIÓN · CANARIAS</p>
- <h2>${hasModule?'¿Qué necesitas hacer hoy?':'Prepara tu primer módulo en unos pasos'}</h2>
- <p>${hasModule?'Selecciona una tarea. EvalúaFP conserva los documentos y las calificaciones en tu equipo.':'Puedes incorporar tu programación actual, crear un borrador editable o configurar solo la evaluación. No necesitas adaptar previamente tu documento a una plantilla.'}</p>
- ${selected?`<div class="welcome-module"><strong>Tu módulo:</strong> ${E(selected.name)} · ${E(selected.academic_year)}</div>`:''}
- </div><div class="task-grid">${cards.map(([key,icon,title,description],i)=>`<button type="button" class="task-card" data-page="${key}"><span class="task-icon">${icon}</span><strong>${title}</strong><span>${description}</span><span class="task-action">${!hasModule&&i>0?'Primero, prepara un módulo':'Acceder →'}</span></button>`).join('')}</div>
- <section class="panel" style="margin-top:20px"><h2>Cómo funciona</h2><p>① Prepara tu módulo → ② Crea actividades → ③ Registra y corrige entregas → ④ Valida las notas.</p>
- <p class="small">La inteligencia artificial ayuda a crear y corregir propuestas. La decisión sobre currículo y calificaciones corresponde siempre al docente.</p></section>`;
+ S.moduleId=selected?.id||null;
+ const tasks=[['preparar','1','Preparar el módulo','Configurar currículo, programación y criterios.'],['examenes','2','Crear una prueba','Preparar actividades, exámenes y rúbricas.'],['entregas','3','Recoger trabajos','Registrar entregas para revisar.'],['correcciones','4','Corregir trabajos','Revisar y validar las correcciones.'],['evaluacion','5','Consultar el cuaderno','Registrar calificaciones y consultar el progreso.']];
+ const advanced=[['feoe','Formación en empresa'],['expediente','Expediente académico'],['decisiones','Decisiones académicas'],['programaciones','Editar RA, CE y pesos'],['ajustes','IA, almacenamiento y copias']];
+ $('#main').innerHTML=`<section class="welcome-card compact-welcome"><p class="welcome-kicker">ADMINISTRACIÓN Y GESTIÓN · CANARIAS</p><h2>${selected?'¿Qué necesitas hacer hoy?':'Empieza por preparar tu primer módulo'}</h2><p>${selected?'Selecciona el módulo y la tarea. Los datos se guardan localmente.':'Puedes importar una programación o crear un borrador guiado.'}</p><div class="welcome-module">Modo ${S.advanced?'avanzado':'guiado'}</div></section>
+ ${selected?`<section class="panel home-context"><form id="home-context" class="formrow"><div class="field grow"><label for="home-module">Módulo de trabajo</label><select name="module_id" id="home-module">${opt(S.modules,selected.id,m=>m.name+' · '+m.group_name+' · '+m.academic_year)}</select></div><button type="submit" class="btn secondary">Seleccionar</button></form><p class="small">${E(selected.cycle)} · ${E(selected.territory)}</p></section>`:''}
+ <section class="panel home-workflow"><h2>Tu trabajo paso a paso</h2>${tasks.map(([page,step,title,description],i)=>`<button type="button" class="workflow-task" data-action="home-task" data-target="${page}"><span class="workflow-number">${step}</span><span class="workflow-text"><strong>${E(title)}</strong><small>${E(description)}</small></span><span class="workflow-arrow">›</span></button>`).join('')}</section>
+ ${S.advanced?`<section class="panel"><h2>Herramientas avanzadas</h2><div class="advanced-grid">${advanced.map(([page,title])=>`<button type="button" class="btn secondary" data-page="${page}">${E(title)}</button>`).join('')}</div></section>`:`<section class="panel"><h2>¿Necesitas otras herramientas?</h2><p class="small">Formación en empresa, expediente, decisiones y configuración están disponibles en modo avanzado.</p><button type="button" class="btn secondary" data-action="home-advanced">Abrir herramientas avanzadas</button></section>`}
+ <p class="small">Las propuestas de IA y los cálculos requieren revisión del docente. No se modifica ninguna calificación por cambiar de modo.</p>`;
 }
 /* 1.1 — Preparación curricular sin JSON ni decisiones automáticas no confirmadas. */
 const TERRITORY_NAMES=['Canarias'];
@@ -1104,9 +1103,23 @@ async function viewPrepare(){
  <input type="hidden" name="reference_course"><input type="hidden" name="reference_code">
  <input type="hidden" name="catalog_entry_id"><p class="small" data-catalog-selection></p>
  <button class="btn" type="submit">Crear módulo y continuar</button></form></section>${catalogPanel()}`;return;}
- const scope=await API('/api/common-scopes/draft?module_id='+Number(S.moduleId));
+ const mid=Number(S.moduleId);
+ const scope=await API('/api/common-scopes/draft?module_id='+mid);
  if(scope.profile){
-   $('#main').innerHTML=`<section class="guide-context"><div class="field"><label>Materia que estás preparando</label><select id="prepare-module">${opt(S.modules,S.moduleId,m=>m.name+' · '+m.academic_year)}</select></div><button type="button" class="btn secondary" data-action="prepare-new-module">+ Nuevo módulo</button></section>`+(S.scopeNotebookModule===Number(S.moduleId)?(S.scopeConsolidationModule===Number(S.moduleId)?scopeConsolidationMarkup(await API('/api/common-scopes/consolidation?module_id='+Number(S.moduleId)+'&session='+encodeURIComponent(S.scopeSession||'ordinaria'))):scopeNotebookMarkup(await API('/api/common-scopes/notebook?module_id='+Number(S.moduleId)))+scopeRecoveryMarkup(await API('/api/common-scopes/notebook?module_id='+Number(S.moduleId)),await API('/api/common-scopes/recovery?module_id='+Number(S.moduleId)))):`<section class="panel"><button class="btn" data-action="scope-open-notebook">Abrir cuaderno de evaluación competencial</button></section>`+commonScopeMarkup(scope));
+   let markup;
+   if(S.scopeNotebookModule===mid){
+     if(S.scopeConsolidationModule===mid){
+       markup=scopeConsolidationMarkup(await API('/api/common-scopes/consolidation?module_id='+mid+'&session='+encodeURIComponent(S.scopeSession||'ordinaria')));
+     }else{
+       const [book,recovery]=await Promise.all([API('/api/common-scopes/notebook?module_id='+mid),API('/api/common-scopes/recovery?module_id='+mid)]);
+       if(S.page!=='preparar'||Number(S.moduleId)!==mid)return;
+       markup=scopeNotebookMarkup(book)+scopeRecoveryMarkup(book,recovery);
+     }
+   }else{
+     markup=`<section class="panel"><button class="btn" data-action="scope-open-notebook">Abrir cuaderno de evaluación competencial</button></section>`+commonScopeMarkup(scope);
+   }
+   if(S.page!=='preparar'||Number(S.moduleId)!==mid)return;
+   $('#main').innerHTML=`<section class="guide-context"><div class="field"><label>Materia que estás preparando</label><select id="prepare-module">${opt(S.modules,mid,m=>m.name+' · '+m.academic_year)}</select></div><button type="button" class="btn secondary" data-action="prepare-new-module">+ Nuevo módulo</button></section>`+markup;
    return;
  }
  const info=await API('/api/programming-builder/'+Number(S.moduleId));S.prepareInfo=info;
@@ -1506,7 +1519,11 @@ function renderReview(item){
 async function viewEvaluation(){
  const [modules]=await Promise.all([listModules(),listExams()]);
  if(!modules.length){$('#main').innerHTML=empty('Primero cree un módulo desde Programaciones.');return;}
- S.evaluationModuleId=S.evaluationModuleId||S.moduleId||modules[0].id;
+ S.evaluationModuleId=modules.some(m=>Number(m.id)===Number(S.evaluationModuleId))?Number(S.evaluationModuleId):Number(S.moduleId||modules[0].id);
+ const scope=await API('/api/common-scopes/draft?module_id='+S.evaluationModuleId);
+ if(scope.profile){
+   $('#main').innerHTML=`<section class="panel"><div class="field"><label>Selecciona módulo o materia</label><select id="evaluation-module">${opt(modules,S.evaluationModuleId,m=>m.name+' · '+m.academic_year)}</select></div><h2>Evaluación competencial del ámbito</h2><p>Esta materia utiliza competencias específicas, no el cuaderno de RA y CE profesionales.</p><button type="button" class="btn" data-action="eval-scope-notebook">Abrir cuaderno competencial</button></section>`;return;
+ }
  const x=await API('/api/evaluation?module_id='+encodeURIComponent(S.evaluationModuleId));S.evalData=x;
  const students=x.students||[],criteria=x.criteria||[],units=x.units||[],instruments=x.instruments||[],policy=x.settings;
  const feoeEvidence=(await API('/api/feoe/module-evidence?module_id='+Number(S.evaluationModuleId))).evidence;
@@ -1517,10 +1534,10 @@ async function viewEvaluation(){
  $('#main').innerHTML=`${intro('Cuaderno de evaluación por unidades, trimestres, RA y CE. Integra correcciones validadas de exámenes, calificaciones manuales y notas importadas desde CSV. Ninguna nota final se publica si las ponderaciones o evidencias son incompletas.')}
  <section class="panel"><div class="formrow"><div class="field grow"><label>Módulo profesional</label><select id="evaluation-module">${opt(modules,S.evaluationModuleId,m=>m.name+' · '+m.academic_year)}</select></div><span class="badge">${students.length} alumnos · ${units.length} unidades · ${instruments.length} instrumentos</span></div></section>
  ${x.warnings.length?`<section class="hint warning"><strong>Incidencias que impiden calcular una calificación definitiva</strong><ul>${x.warnings.map(w=>`<li>${E(w)}</li>`).join('')}</ul></section>`:''}
- <section class="panel"><h2>Evidencias cualitativas FEOE del módulo</h2><p>Consulta las valoraciones del tutor de empresa y las revisiones del profesorado. No se convierten automáticamente en notas.</p><button type="button" class="btn secondary" data-page="feoe">Abrir seguimiento FEOE</button>
- ${feoeEvidence.length?`<div class="table-wrap"><table><thead><tr><th>Alumno</th><th>RA / CE</th><th>Empresa</th><th>Valoración</th><th>Revisión docente</th></tr></thead><tbody>${feoeEvidence.map(r=>`<tr><td>${E(r.student_name)}</td><td>${E(r.ra_code)} · ${E(r.criterion_codes.join(', '))}${r.current_curriculum?'':' · Currículo modificado'}</td><td>${E(r.company_name)}</td><td>${E(r.valuation?.status||'Pendiente')} · ${E(r.valuation?.observations||'')}</td><td>${E(r.teacher_review?.notes||'Pendiente de revisión')}</td></tr>`).join('')}</tbody></table></div>`:empty('Sin evidencias de empresa vinculadas a planes confirmados.')}</section>
- <section class="panel"><h2>1. Criterios de calificación y tratamiento de la formación en empresa</h2>
- <p class="small">La programación de ejemplo indica cinco RA al 20 % y un 25 % adicional de empresa: esto suma 125 %. Debe validarse una interpretación o corregirse formalmente la programación. Esta pantalla nunca modifica automáticamente los pesos originales.</p>
+ <details class="eval-section" ${S.advanced||feoeEvidence.length?'open':''}><summary>Formación en empresa <small>${feoeEvidence.length} evidencias</small></summary><section class="panel"><h2>Evidencias cualitativas FEOE del módulo</h2><p>Consulta las valoraciones del tutor de empresa y las revisiones del profesorado. No se convierten automáticamente en notas.</p><button type="button" class="btn secondary" data-page="feoe">Abrir seguimiento FEOE</button>
+ ${feoeEvidence.length?`<div class="table-wrap"><table><thead><tr><th>Alumno</th><th>RA / CE</th><th>Empresa</th><th>Valoración</th><th>Revisión docente</th></tr></thead><tbody>${feoeEvidence.map(r=>`<tr><td>${E(r.student_name)}</td><td>${E(r.ra_code)} · ${E(r.criterion_codes.join(', '))}${r.current_curriculum?'':' · Currículo modificado'}</td><td>${E(r.company_name)}</td><td>${E(r.valuation?.status||'Pendiente')} · ${E(r.valuation?.observations||'')}</td><td>${E(r.teacher_review?.notes||'Pendiente de revisión')}</td></tr>`).join('')}</tbody></table></div>`:empty('Sin evidencias de empresa vinculadas a planes confirmados.')}</section></details>
+ <details class="eval-section" ${S.advanced||!policy.validated?'open':''}><summary>1. Configurar criterios de calificación <small>${policy.validated?'Política validada':'Pendiente de validar'}</small></summary><section class="panel"><h2>Criterios de calificación y tratamiento de la formación en empresa</h2>
+ <p class="small">Comprueba la programación de este módulo y valida una política coherente. La aplicación no modifica automáticamente los pesos originales.</p>
  <form id="eval-policy"><div class="formgrid"><div class="field"><label>Tratamiento de empresa</label><select name="enterprise_mode">
  <option value="unresolved" ${policy.enterprise_mode==='unresolved'?'selected':''}>Pendiente de aclarar</option>
  <option value="integrated" ${policy.enterprise_mode==='integrated'?'selected':''}>Evidencias de empresa integradas en RA</option>
@@ -1530,8 +1547,8 @@ async function viewEvaluation(){
  <div class="field"><label>% mínimo de CE superados para RA</label><input name="ra_min_criteria_pct" type="number" min="0" max="100" step="1" value="${E(policy.ra_min_criteria_pct)}"></div></div>
  <div class="field"><label>Justificación de la interpretación adoptada</label><textarea name="teacher_note" placeholder="Acuerdo o modificación de programación revisada por el equipo docente">${E(policy.teacher_note)}</textarea></div>
  <label><input name="validated" type="checkbox" ${policy.validated?'checked':''}> Confirmo, como docente, esta política de cálculo</label>
- <div class="actions"><button class="btn" type="submit">Guardar política</button></div></form></section>
- <div class="grid2"><section class="panel"><h2>2. Unidades de evaluación</h2>
+ <div class="actions"><button class="btn" type="submit">Guardar política</button></div></form></section></details>
+ <details class="eval-section" ${S.advanced||!instruments.length?'open':''}><summary>2. Preparar unidades e instrumentos <small>${units.length} unidades · ${instruments.length} instrumentos</small></summary><div class="grid2"><section class="panel"><h2>Unidades de evaluación</h2>
  <form id="eval-unit"><div class="formgrid"><div class="field"><label>Código</label><input name="code" required placeholder="UD01"></div>
  <div class="field"><label>Unidad / situación de aprendizaje</label><input name="title" required placeholder="Diario y mayor"></div>
  <div class="field"><label>Trimestre</label><select name="term"><option value="1">1.ª evaluación</option><option value="2">2.ª evaluación</option><option value="3">3.ª evaluación</option></select></div></div>
@@ -1547,11 +1564,11 @@ async function viewEvaluation(){
  <div class="section-title">CE evaluados y peso de este instrumento dentro de cada CE</div>
  <div class="eval-scroll">${options||empty('Primero configure los criterios.')}</div>
  <p class="small">Los porcentajes de todos los instrumentos de un mismo CE deben sumar 100 %. P. ej., prueba escrita 60 %, portfolio 40 %.</p>
- <button class="btn secondary" type="submit">Crear instrumento</button></form></section></div>
- <section class="panel"><h2>4. Libro de notas e importaciones</h2>
+ <button class="btn secondary" type="submit">Crear instrumento</button></form></section></div></details>
+ <section class="panel"><h2>3. Registrar notas</h2>
  ${instruments.length?`<div class="field" style="max-width:600px"><label>Instrumento a calificar</label><select id="eval-instrument-select">${opt(instruments,S.evalInstrumentId||instruments[0].id,i=>i.term+'ª · '+i.title+' ('+i.kind+')')}</select></div>`:empty('Cree un instrumento para introducir calificaciones.')}
  <div id="eval-scores"></div></section>
- <section class="panel"><h2>5. Resultados por evaluación, RA y CE</h2>
+ <section class="panel"><h2>4. Revisar y validar resultados</h2>
  <p class="small">Las notas trimestrales son instantáneas provisionales de los instrumentos de cada período; las notas finales requieren evidencias completas, pesos correctos y validación de la política.</p>
  <div class="table-wrap"><table><thead><tr><th>Alumno/a</th><th>1.ª</th><th>2.ª</th><th>3.ª</th><th>RA</th><th>Nota final calculable</th></tr></thead><tbody>${students.map(st=>`<tr><td><b>${E(st.name)}</b><div class="small">${E(st.code)}</div></td>
  ${st.terms.map(t=>`<td>${t.score??'—'} <small>${t.completed}/${t.expected}</small></td>`).join('')}
@@ -1561,7 +1578,7 @@ async function viewEvaluation(){
  st.final_score===null?'<span class="badge orange">Pendiente</span>':`<strong>${st.final_score} / 10</strong><div class="small">Antes del cierre docente</div>`}
  <div class="actions"><a class="btn smallbtn secondary" href="/api/evaluation/${S.evaluationModuleId}/student/${st.student_id}.pdf">Informe PDF</a>
  ${st.final_score!==null?`<button type="button" class="btn smallbtn" data-action="eval-close" data-id="${st.student_id}">Validar cierre</button>`:''}</div></td></tr>`).join('')}</tbody></table></div>
- <div class="actions" style="flex-wrap:wrap"><button class="btn secondary" data-action="export-evaluation" type="button">Resultados CSV</button>
+ <details class="eval-section" ${S.advanced?'open':''}><summary>Exportar informes y conectar con Additio</summary><div class="actions" style="flex-wrap:wrap"><button class="btn secondary" data-action="export-evaluation" type="button">Resultados CSV</button>
  <a class="btn secondary" href="/api/evaluation/${S.evaluationModuleId}/export/xlsx">Excel completo (.xlsx)</a>
  <a class="btn secondary" href="/api/evaluation/${S.evaluationModuleId}/export/xls">Excel clásico (.xls)</a>
  <a class="btn secondary" href="/api/evaluation/${S.evaluationModuleId}/export/additio-alumnos.xlsx">Additio: importar grupo Excel</a>
@@ -1575,8 +1592,8 @@ async function viewEvaluation(){
  <a class="btn secondary" href="/api/evaluation/${S.evaluationModuleId}/export/additio-seguimiento.csv">RA/CE seguimiento provisional CSV</a>
  <a class="btn secondary" href="/api/evaluation/${S.evaluationModuleId}/export/additio-estado.csv">Estado de validación (separado)</a>
  <a class="btn secondary" href="/api/evaluation/${S.evaluationModuleId}/export/additio-pegar.tsv">Additio: copiar/pegar TSV</a></div>
- <p class="small">Para Additio se exportan exclusivamente las calificaciones curriculares RA/CE, sin columnas de exámenes, portfolios ni instrumentos. El paquete de configuración contiene el listado de RA (alta revisada por docente), los CE en el formato de una columna y una tabla de ponderaciones. Las notas definitivas solo se exportan con cierre docente vigente; el archivo de seguimiento provisional está identificado por separado. Compruebe el orden de alumnos y los códigos en Additio antes de trasladar las calificaciones.</p></section>`;
- S.evalInstrumentId=S.evalInstrumentId||instruments[0]?.id||null;
+ <p class="small">Para Additio se exportan exclusivamente las calificaciones curriculares RA/CE, sin columnas de exámenes, portfolios ni instrumentos. El paquete de configuración contiene el listado de RA (alta revisada por docente), los CE en el formato de una columna y una tabla de ponderaciones. Las notas definitivas solo se exportan con cierre docente vigente; el archivo de seguimiento provisional está identificado por separado. Compruebe el orden de alumnos y los códigos en Additio antes de trasladar las calificaciones.</p></details></section>`;
+ S.evalInstrumentId=instruments.some(i=>Number(i.id)===Number(S.evalInstrumentId))?Number(S.evalInstrumentId):instruments[0]?.id||null;
  renderEvalScores();
 }
 function renderEvalScores(){
@@ -1586,7 +1603,7 @@ function renderEvalScores(){
  const ces=instrument.targets.map(t=>x.criteria.find(c=>c.id===t.criterion_id)).filter(Boolean);
  area.innerHTML=`<div class="actions"><button class="btn secondary" type="button" data-action="download-eval-template">Descargar plantilla CSV</button>
  ${instrument.exam_id?`<button class="btn secondary" type="button" data-action="sync-eval-exam" data-id="${instrument.id}">Importar notas validadas del examen</button>`:''}</div>
- <form id="eval-import" class="formrow" style="margin:15px 0"><input type="hidden" name="instrument_id" value="${iid}"><div class="field grow"><label>Importar notas CSV (codigo_alumno;criterio;nota;comentario)</label><input type="file" name="csv" accept=".csv,text/csv" required></div><button type="submit" class="btn secondary">Importar CSV</button></form>
+ <form id="eval-import" class="formrow" style="margin:15px 0"><input type="hidden" name="instrument_id" value="${iid}"><div class="field grow"><label>Importar notas CSV (codigo_alumno;criterio;nota;comentario). Indica RA/CE, por ejemplo RA1/a.</label><input type="file" name="csv" accept=".csv,text/csv" required></div><button type="submit" class="btn secondary">Importar CSV</button></form>
  <div class="table-wrap"><table><thead><tr><th>Alumno</th>${ces.map(c=>`<th>${E(c.ra_code)} · ${E(c.code)}</th>`).join('')}</tr></thead><tbody>
  ${x.students.map(st=>`<tr><td><strong>${E(st.name)}</strong><div class="small">${E(st.code)}</div></td>${ces.map(c=>{
  const rec=x.scores.find(r=>r.student_id===st.student_id&&r.instrument_id===iid&&r.criterion_id===c.id);
@@ -1594,6 +1611,7 @@ function renderEvalScores(){
 }
 async function viewSettings(){
  const a=await API('/api/settings');S.aiSettings=a;
+ const backups=(await API('/api/backup/list')).archives;
  $('#main').innerHTML=`${intro('OpenAI o API compatible. Datos, SQLite y originales guardados localmente; en modo USB todas las rutas se guardan relativas al dispositivo.')}
  <section class="panel"><h2>Proveedor de IA</h2><form id="save-settings"><div class="formgrid">
  ${[['provider','Proveedor (etiqueta)'],['base_url','URL base de API'],['model_analysis','Modelo: análisis de programación'],['model_generation','Modelo: generación'],['model_vision','Modelo: visión manuscrita'],['model_correction','Modelo: corrección']].map(([key,label])=>`<div class="field"><label>${label}</label><input name="${key}" required value="${E(a[key])}"></div>`).join('')}</div>
@@ -1613,7 +1631,10 @@ async function viewSettings(){
  <div class="actions"><button class="btn secondary" type="submit">Migrar datos y cambiar carpetas</button></div></form>
  <p class="small">El cambio copia documentos y SQLite, actualiza las rutas guardadas y exige reiniciar EvalúaFP. Los archivos antiguos se conservan como medida de seguridad.</p>
  <div class="actions"><a class="btn secondary" href="/api/backup">Crear copia ZIP en la carpeta elegida y descargarla</a></div>
- <p class="small">En modo USB, la copia incluye la clave API solo en su formato cifrado, nunca la contraseña maestra.</p></section>
+ <p class="small">En modo USB, la copia incluye la clave API solo en su formato cifrado, nunca la contraseña maestra. Los expedientes del ZIP no están cifrados.</p>
+ <details class="eval-section"><summary>Recuperar una copia de seguridad</summary><div class="panel"><p>Se creará una carpeta nueva junto a tu carpeta de datos. No se sustituirá ni se activará la base de datos en uso. Solo se admiten copias con manifiesto de integridad.</p>
+ <button class="btn secondary" type="button" data-action="backup-list-refresh">Actualizar lista de copias</button>
+ ${backups.length?`<form id="backup-recover"><div class="field"><label for="backup-choice">Copia local</label><select id="backup-choice" name="name" required>${backups.map(b=>`<option value="${E(b.name)}">${E(b.name)} · ${(b.size/1048576).toFixed(1)} MB</option>`).join('')}</select></div><label><input type="checkbox" name="confirmed" required> Confirmo que deseo recuperar los datos en una carpeta independiente.</label><div class="actions"><button class="btn" type="submit">Verificar y recuperar</button></div></form>`:empty('No hay copias ZIP locales en la carpeta configurada.')}<div id="backup-recovery-result" role="status"></div></div></details></section>
  <section class="panel"><h2>Seguridad de los datos del alumnado</h2>
  <p>El programa no requiere Internet para consultar las notas, exámenes o SQLite. Las solicitudes de IA sí transmitirán los textos o imágenes necesarios al proveedor elegido.</p>
  <div class="hint warning">Un pendrive convencional no protege la base SQLite ni los PDF ante robo o extravío. Utilice un dispositivo USB con cifrado de unidad (por ejemplo, BitLocker To Go) y realice copias en otra ubicación segura.</div>
@@ -1624,6 +1645,20 @@ function downloadText(value,name,mime){const url=URL.createObjectURL(new Blob([v
 function formObject(form){return Object.fromEntries(new FormData(form).entries());}
 async function doSubmit(form){
  const id=form.id;
+ if(id==='backup-recover'){
+   const dest=$('#backup-recovery-result');
+   const result=await busy(()=>API('/api/backup/recover','POST',{name:form.elements.name.value,confirmed:form.elements.confirmed.checked}));
+   if(result&&dest?.isConnected){dest.innerHTML=`<p><strong>Recuperación verificada.</strong> Los datos actuales permanecen intactos.</p><pre class="path">${E(result.path)}</pre><p>La carpeta recuperada no se ha activado. Cierra EvalúaFP y consulta el procedimiento de configuración del almacenamiento antes de usarla.</p>`;form.elements.confirmed.checked=false;}
+   return;
+ }
+ if(id==='home-context'){
+   const mid=Number(form.elements.module_id.value);
+   if(!S.modules.some(m=>Number(m.id)===mid))throw Error('Seleccione un módulo disponible.');
+   S.moduleId=mid;S.evaluationModuleId=mid;S.examModuleId=mid;S.evalInstrumentId=null;
+   S.preparePath=null;S.wizardDraft=null;S.proposal=null;S.autoProposedModuleId=null;
+   S.cycleRecordRoster=null;S.cycleRecordReport=null;S.feoeRoster=null;S.feoeStay=null;
+   await page('inicio');return;
+ }
  if(id==='prepare-create'){
    const result=await busy(()=>API('/api/modules','POST',formObject(form)),'Módulo creado.');
    if(result){S.moduleId=result.id;S.autoProposedModuleId=null;S.creatingModule=false;S.wizardDraft=null;S.preparePath=null;await page('preparar');}return;
@@ -1990,10 +2025,9 @@ document.addEventListener('change',async event=>{
  }catch(error){if(error?.message?.includes('canceló al cambiar de pantalla'))return;console.error(error);toast(error?.message||'Error al actualizar la selección.',true);}
 });
 document.querySelector('#toggle-advanced')?.addEventListener('click',()=>{
- S.advanced=!S.advanced;
- $('#advanced-nav').hidden=!S.advanced;
- $('#toggle-advanced').textContent=S.advanced?'Ocultar opciones avanzadas':'Mostrar opciones avanzadas';
- $('#toggle-advanced').setAttribute('aria-expanded',String(S.advanced));
+ S.advanced=!S.advanced;syncMode();
+ // No reconstruir los formularios en uso; se aplica al abrir la siguiente vista.
+ if(S.page==='inicio')page('inicio');
 });
 document.addEventListener('click',async event=>{
  try {
@@ -2001,6 +2035,25 @@ document.addEventListener('click',async event=>{
  if(event.target.id==='large-page'){event.target.classList.toggle('zoom');return;}
  const el=event.target.closest('[data-action]');if(!el)return;
  const action=el.dataset.action;const id=Number(el.dataset.id);const index=Number(el.dataset.index);
+ if(action==='eval-scope-notebook'){S.moduleId=Number(S.evaluationModuleId);S.scopeNotebookModule=S.moduleId;S.scopeConsolidationModule=null;await page('preparar');return;}
+ if(action==='backup-list-refresh'){await page('ajustes');return;}
+ if(action==='home-advanced'){S.advanced=true;syncMode();await page('inicio');return;}
+ if(action==='home-task'){
+   const destination=el.dataset.target;
+   if(!S.moduleId&&destination!=='preparar'){await page('preparar');return;}
+   if(destination==='evaluacion'||destination==='examenes'){
+     const mid=Number(S.moduleId);
+     const scope=await API('/api/common-scopes/draft?module_id='+mid);
+     if(S.page!=='inicio'||Number(S.moduleId)!==mid)return;
+     if(scope.profile){
+       S.scopeNotebookModule=destination==='evaluacion'?mid:null;S.scopeConsolidationModule=null;
+       await page('preparar');return;
+     }
+     if(destination==='evaluacion'){S.evaluationModuleId=mid;S.evalInstrumentId=null;}
+     else S.examModuleId=mid;
+   }
+   await page(destination);return;
+ }
  if(action==='boe-monitor-check'){
    const boe_id=el.dataset.boeId||$('#monitor-boe-id')?.value.trim()||'';
    if(!boe_id){toast('Introduzca un identificador del BOE.',true);return;}
@@ -2741,7 +2794,9 @@ document.addEventListener('click',async event=>{
   const ins=S.evalData.instruments.find(i=>i.id===Number(S.evalInstrumentId));
   if(!ins)return;
   const csv='\ufeffcodigo_alumno;criterio;nota;comentario\r\n'+S.evalData.students.flatMap(st=>ins.targets.map(t=>{
-    const c=S.evalData.criteria.find(c=>c.id===t.criterion_id);return `${st.code};${c.code};;`;
+    const c=S.evalData.criteria.find(c=>c.id===t.criterion_id);
+    const quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+    return [quote(st.code),quote(c.ra_code+'/'+c.code),'',''].join(';');
   })).join('\r\n');
   downloadText(csv,'plantilla_notas_'+ins.id+'.csv','text/csv;charset=utf-8');return;
  }

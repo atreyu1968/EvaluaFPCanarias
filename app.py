@@ -50,7 +50,10 @@ def read_json(handler, max_bytes=3_000_000):
         raise ValueError('Tamaño de solicitud JSON no permitido.')
     if 'application/json' not in handler.headers.get('Content-Type',''):
         raise ValueError('Se requiere Content-Type: application/json')
-    return json.loads(handler.rfile.read(size))
+    payload=json.loads(handler.rfile.read(size))
+    if not isinstance(payload,dict):
+        raise ValueError('Se requiere un objeto JSON.')
+    return payload
 
 
 def multipart(handler):
@@ -332,29 +335,9 @@ def print_report(d,sid):
 
 
 def create_backup():
-    from datetime import datetime
-    name='copia_evaluafp_'+datetime.now().strftime('%Y%m%d_%H%M%S')+'.zip'
-    location=data.BACKUPS/name
-    tmp=data.DB_DIR/'backup_temp.sqlite3'
-    with data.connect() as origin:
-        dest=sqlite3.connect(tmp)
-        try:
-            origin.backup(dest)
-        finally:
-            dest.close()
-    try:
-        with zipfile.ZipFile(location,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
-            z.write(tmp,'datos/evaluafp.sqlite3')
-            for root,_,files in os.walk(data.STORAGE):
-                for fname in files:
-                    f=Path(root)/fname
-                    z.write(f,'almacen/'+str(f.relative_to(data.STORAGE)).replace('\\','/'))
-            encrypted_key=ia.secret_file()
-            if storage_config.PORTABLE and encrypted_key.exists():
-                z.write(encrypted_key,'seguridad/api_cifrada.json')
-        return location
-    finally:
-        tmp.unlink(missing_ok=True)
+    import canarias_backup
+    return canarias_backup.make(data.DATA,data.BACKUPS,data.DB_FILE,data.STORAGE,
+                                ia.secret_file() if storage_config.PORTABLE else None)
 
 class MissingStudentsError(ValueError):
     """Falta alumnado para el ZIP. No se importa ninguna entrega."""
@@ -413,6 +396,17 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Length',str(len(raw)))
         self.end_headers();self.wfile.write(raw)
 
+    def download_disposition(self,filename):
+        # Mantener la extensión cuando el nombre original es largo; el
+        # nombre alternativo ASCII evita fallos de codificación de cabeceras.
+        base,ext=os.path.splitext(str(filename))
+        safe_ext=ext if re.fullmatch(r'\.[A-Za-z0-9]{1,10}',ext) else ''
+        clean=data.slug(base)
+        ascii_base=re.sub(r'[^A-Za-z0-9._-]','_',clean).strip('._') or 'documento'
+        safe_name=ascii_base[:65-len(safe_ext)]+safe_ext
+        utf8_name=urllib.parse.quote(clean[:65-len(safe_ext)]+safe_ext,safe='')
+        self.send_header('Content-Disposition',f"attachment; filename=\"{safe_name}\"; filename*=UTF-8''{utf8_name}")
+
     def send_file(self,path,mime='application/octet-stream',filename=None):
         path=Path(path)
         if not path.is_file():raise ValueError('Archivo no encontrado en el almacenamiento.')
@@ -421,7 +415,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Cache-Control','private, no-store')
         self.send_header('X-Content-Type-Options','nosniff')
         self.send_header('Content-Length',str(path.stat().st_size))
-        if filename:self.send_header('Content-Disposition',f'attachment; filename="{data.slug(filename)}"')
+        if filename:Handler.download_disposition(self,filename)
         self.end_headers()
         with path.open('rb') as f:
             while chunk:=f.read(65536):self.wfile.write(chunk)
@@ -431,7 +425,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Type',mime)
         self.send_header('Cache-Control','private, no-store')
         self.send_header('X-Content-Type-Options','nosniff')
-        self.send_header('Content-Disposition',f'attachment; filename="{data.slug(filename)}"')
+        Handler.download_disposition(self,filename)
         self.send_header('Content-Length',str(len(blob)))
         self.end_headers();self.wfile.write(blob)
 
@@ -455,9 +449,11 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type','text/html; charset=utf-8')
             self.send_header('Set-Cookie',f'efp_session={TOKEN}; HttpOnly; SameSite=Strict; Path=/')
-            self.send_header('Content-Security-Policy',"default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'")
+            self.send_header('Content-Security-Policy',"default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
             self.send_header('X-Content-Type-Options','nosniff')
             self.send_header('Cache-Control','no-store')
+            self.send_header('Referrer-Policy','no-referrer')
+            self.send_header('X-Frame-Options','DENY')
             self.send_header('Content-Length',str(len(raw)))
             self.end_headers();self.wfile.write(raw)
             return
@@ -468,6 +464,9 @@ class Handler(BaseHTTPRequestHandler):
         self.ensure_auth()
         if self.command=='GET':
             with data.connect() as d:
+                if path=='/api/backup/list':
+                    import canarias_backup
+                    return self.send({'archives':canarias_backup.list_archives(data.BACKUPS)})
                 if path=='/api/health':return self.send({'ok':True,'database':str(data.DB_FILE),'storage':str(data.STORAGE)})
                 if path=='/api/dashboard':
                     stats={}
@@ -730,6 +729,10 @@ class Handler(BaseHTTPRequestHandler):
             fields,files=multipart(self)
         else:
             body=read_json(self)
+        if path=='/api/backup/recover':
+            import canarias_backup
+            return self.send(canarias_backup.recover_archive(data.BACKUPS,data.DATA,
+                body.get('name'),body.get('confirmed')))
         if path=='/api/settings':
             for required in ('provider','base_url','model_generation','model_vision','model_correction','model_analysis'):
                 if not str(body.get(required,'')).strip():raise ValueError(f'Falta el ajuste {required}')
@@ -1729,6 +1732,20 @@ def selftest():
     import xlwt
     if not callable(getattr(exportaciones,'export_excel',None)):
         raise RuntimeError('La exportación Excel no está incluida en el EXE.')
+    # Comprobar los módulos canarios incorporados al candidato portable.
+    import canarias_backup
+    import canarias_academic_decisions
+    import canarias_cycle_record
+    import canarias_feoe
+    import common_scope_official
+    import common_scope_export
+    import common_scope_recovery
+    for func in (canarias_backup.make, canarias_backup.recover_archive,
+                 canarias_academic_decisions.evaluate, canarias_cycle_record.report,
+                 canarias_feoe.module_evidence, common_scope_export.export,
+                 common_scope_recovery.load):
+        if not callable(func):
+            raise RuntimeError('Falta una función de la edición canaria.')
     # Asegura que PyInstaller ha incluido la biblioteca de interfaz nativa.
     if os.name == 'nt' or getattr(sys, 'frozen', False):
         try:
@@ -1742,6 +1759,14 @@ def selftest():
             raise RuntimeError('SQLite no responde.')
         if db.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='modules'").fetchone()[0] != 1:
             raise RuntimeError('No se ha inicializado el esquema de SQLite.')
+        tables={r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        expected={'scope_activities','scope_evidence','scope_matter_grades',
+                  'scope_final_decisions','scope_recovery_plans','cycle_decision_records',
+                  'feoe_companies','feoe_stays','feoe_targets','feoe_valuations'}
+        if not expected<=tables:
+            raise RuntimeError('Faltan tablas canarias: '+', '.join(sorted(expected-tables)))
+        if db.execute('PRAGMA integrity_check').fetchall()[0][0]!='ok':
+            raise RuntimeError('La base SQLite no supera la prueba de integridad.')
     print('PRUEBA DE ARRANQUE CORRECTA', flush=True)
 
 
@@ -1763,6 +1788,7 @@ if __name__ == '__main__':
             logfile=data.DATA/'errores_inicio.log'
             logfile.write_text(traceback.format_exc(),encoding='utf-8')
             try:
+                if '--selftest' in sys.argv: raise RuntimeError('Prueba sin ventanas')
                 import ctypes
                 ctypes.windll.user32.MessageBoxW(None,
                     'EvalúaFP no ha podido iniciarse.\n\nDetalle: '+str(exc)[:400]+

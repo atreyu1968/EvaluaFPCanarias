@@ -137,7 +137,7 @@ def put_score(d,body):
                  VALUES(?,?,?,?,?,'manual',1,?)
                  ON CONFLICT(instrument_id,criterion_id,student_id) DO UPDATE SET
                  score=excluded.score,comment=excluded.comment,origin='manual',
-                 teacher_validated=1,changed_at=excluded.changed_at''',
+                 source_ref='',teacher_validated=1,changed_at=excluded.changed_at''',
               (iid,cid,sid,round(score,4),comment,data.now()))
     data.log(d,'evaluation_score_validated','student',sid,
              {'instrument_id':iid,'criterion_id':cid,'new_score':score,'previous_score':old['score'] if old else None})
@@ -150,6 +150,7 @@ def import_csv(d,instrument_id,raw):
     if len(raw)>4_000_000:raise ValueError('El CSV supera el límite de 4 MB.')
     try:text=raw.decode('utf-8-sig')
     except UnicodeDecodeError as exc:raise ValueError('CSV: guarde el documento en UTF-8.') from exc
+    if not text.strip():raise ValueError('CSV vacío.')
     try:dialect=csv.Sniffer().sniff(text[:4096],delimiters=';,\t')
     except csv.Error:
         class Fallback(csv.excel):
@@ -161,16 +162,28 @@ def import_csv(d,instrument_id,raw):
     keys={'codigo_alumno','criterio','nota'}
     if not keys.issubset({(s or '').strip().lower() for s in reader.fieldnames or []}):
         raise ValueError('CSV: encabezados obligatorios codigo_alumno;criterio;nota;comentario')
-    mapping={r['code'].casefold():r['id'] for r in d.execute('SELECT id,code FROM students WHERE module_id=?',(instr['module_id'],))}
-    criteria={r['code'].casefold():r['id'] for r in d.execute('''SELECT c.id,c.code FROM criteria c JOIN outcomes o
-                        ON o.id=c.outcome_id WHERE o.module_id=?''',(instr['module_id'],))}
+    mapping=defaultdict(set)
+    for r in d.execute('SELECT id,code FROM students WHERE module_id=?',(instr['module_id'],)):
+        mapping[r['code'].strip().casefold()].add(r['id'])
+    criteria=defaultdict(set)
     valid={r[0] for r in d.execute('SELECT criterion_id FROM evaluation_instrument_criteria WHERE instrument_id=?',(instrument_id,))}
+    for r in d.execute('''SELECT c.id,c.code,o.code AS ra_code FROM criteria c JOIN outcomes o
+                        ON o.id=c.outcome_id WHERE o.module_id=?''',(instr['module_id'],)):
+        if r['id'] not in valid:continue
+        code=r['code'].strip().casefold()
+        ra=r['ra_code'].strip().casefold()
+        criteria[code].add(r['id'])
+        criteria[ra+'·'+code].add(r['id'])
+        criteria[ra+'/'+code].add(r['id'])
     prepared=[];seen=set()
     for n,row in enumerate(rows,2):
         row={(k or '').strip().lower():str(v or '').strip() for k,v in row.items()}
-        sid=mapping.get(row.get('codigo_alumno','').casefold())
-        cid=criteria.get(row.get('criterio','').casefold())
-        if not sid or not cid or cid not in valid:raise ValueError(f'Fila {n}: alumno o CE inexistente/no vinculado.')
+        students=mapping.get(row.get('codigo_alumno','').casefold(),set())
+        candidates=criteria.get(row.get('criterio','').casefold(),set())
+        if len(students)>1 or len(candidates)>1:
+            raise ValueError(f'Fila {n}: código ambiguo. Use un código de alumno inequívoco y RA/CE, por ejemplo RA1/a.')
+        if not students or not candidates:raise ValueError(f'Fila {n}: alumno o CE inexistente/no vinculado.')
+        sid=next(iter(students));cid=next(iter(candidates))
         try:score=float(row['nota'].replace(',','.'))
         except Exception:raise ValueError(f'Fila {n}: nota no numérica.')
         if not math.isfinite(score) or not 0<=score<=10:raise ValueError(f'Fila {n}: nota fuera de 0-10.')
@@ -218,7 +231,7 @@ def update_settings(d,body):
     mid=int(body['module_id']);mode=str(body['enterprise_mode']).lower()
     if mode not in {'unresolved','integrated','separate'}:raise ValueError('Modo de empresa no reconocido.')
     fe=float(body.get('enterprise_weight',25));pass_mark=float(body.get('criterion_pass_mark',5))
-    min_pct=float(body.get('ra_min_criteria_pct',50));confirmed=bool(body.get('validated',False))
+    min_pct=float(body.get('ra_min_criteria_pct',50));confirmed=body.get('validated',False) is True
     note=str(body.get('teacher_note','')).strip()[:1000]
     if not all(math.isfinite(x) for x in (fe,pass_mark,min_pct)) or not 0<=fe<=100 or not 0<=pass_mark<=10 or not 0<=min_pct<=100:
         raise ValueError('Porcentajes y umbrales fuera de rango.')
@@ -255,6 +268,11 @@ def summary(d,module_id,student_id=None):
     scores=data.dicts(d.execute('''SELECT s.* FROM evaluation_scores s JOIN evaluation_instruments i
                                   ON i.id=s.instrument_id WHERE i.module_id=?''',(mid,)))
     check_warnings=[]
+    if not ras:check_warnings.append('No hay resultados de aprendizaje configurados.')
+    def valid_weight(value):
+        return isinstance(value,(int,float)) and math.isfinite(value) and 0<=value<=100
+    if any(not valid_weight(x['weight']) for x in ras+ces):
+        check_warnings.append('Existen ponderaciones RA/CE ausentes o fuera de 0–100 %.')
     ra_sum=sum(float(r['weight']) for r in ras if r['weight'] is not None)
     expected_ra=100-policy['enterprise_weight'] if policy['enterprise_mode']=='separate' else 100
     if any(r['weight'] is None for r in ras) or abs(ra_sum-expected_ra)>0.01:
@@ -276,6 +294,14 @@ def summary(d,module_id,student_id=None):
         if abs(total-100)>0.01:check_warnings.append(f'{ce["ra_code"]}·{ce["code"]}: los instrumentos suman {total:g} % (deben sumar 100 %).')
     scores_by= {(s['student_id'],s['instrument_id'],s['criterion_id']):s for s in scores if s['teacher_validated']}
 
+    # Solo consultar FEOE cuando existe el esquema (compatibilidad con bases
+    # antiguas y pruebas mínimas). No transformar superado/no superado en nota.
+    feoe_by_student=defaultdict(list)
+    if d.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='feoe_targets'").fetchone():
+        import canarias_feoe
+        for evidence in canarias_feoe.module_evidence(d,mid):
+            feoe_by_student[evidence['student_id']].append(evidence)
+
     def student_result(student):
         sid=student['id'];ce_scores={};ce_details=[]
         for ce in ces:
@@ -288,7 +314,7 @@ def summary(d,module_id,student_id=None):
             ce_scores[ce['id']]=grade
             ce_details.append({'criterion_id':ce['id'],'code':ce['code'],'ra_code':ce['ra_code'],
                                'score':grade,'complete':valid,'weight_covered':round(covered,2),
-                               'passed':grade is not None and grade>=policy['criterion_pass_mark']})
+                               'passed':valid and grade is not None and achieved/covered>=policy['criterion_pass_mark']})
         ra_details=[];ra_values={}
         for ra in ras:
             subs=[(ce, next(x for x in ce_details if x['criterion_id']==ce['id'])) for ce in ces if ce['ra_id']==ra['id']]
@@ -317,7 +343,10 @@ def summary(d,module_id,student_id=None):
                     if (s:=scores_by.get((sid,i['id'],t['criterion_id']))) is not None]
         fe_complete=bool(fe_planned) and len(fe_records)==len(fe_planned)
         fe_score=round(sum(g*w for g,w in fe_records)/sum(w for g,w in fe_records),2) if fe_records else None
-        complete=not check_warnings and all(r['complete'] for r in ra_details)
+        company_evidence=feoe_by_student[sid]
+        company_pending=any(not e['current_curriculum'] or not e['valuation'] or not e['teacher_review']
+                            for e in company_evidence)
+        complete=not check_warnings and all(r['complete'] for r in ra_details) and not company_pending
         if policy['enterprise_mode']=='separate' and not fe_complete:complete=False
         final=None
         if complete:
@@ -326,12 +355,18 @@ def summary(d,module_id,student_id=None):
         closure_row=d.execute('SELECT id,score,teacher_justification,evidence_sha256,validated_at FROM evaluation_closures WHERE module_id=? AND student_id=? ORDER BY id DESC LIMIT 1',(mid,sid)).fetchone()
         closure=dict(closure_row) if closure_row else None
         current_digest=_student_digest(policy,ras,ces,instrs,[s for s in scores if s['student_id']==sid])
+        if company_evidence:
+            # Incluye identidad, versión curricular, valoración y revisión.
+            # Cualquier nueva valoración/revisión obliga a contrastar el cierre.
+            current_digest=hashlib.sha256(json.dumps({'base':current_digest,
+                'feoe':sorted(company_evidence,key=lambda e:e['id'])},
+                sort_keys=True,ensure_ascii=False,default=str).encode('utf-8')).hexdigest()
         if closure:
-            closure['current']=closure['evidence_sha256']==current_digest
+            closure['current']=bool(complete and closure['score']==final and closure['evidence_sha256']==current_digest)
         return {'student_id':sid,'code':student['code'],'name':student['name'],'criteria':ce_details,
                 'outcomes':ra_details,'terms':terms,'enterprise_score':fe_score,
                 'final_score':final,'status':'calculable (pendiente de cierre docente)' if complete else 'incompleta',
-                'warnings':([] if complete else ['Faltan ponderaciones, instrumentos o evidencias validadas.']),
+                'warnings':([] if complete else ['Faltan ponderaciones, instrumentos o evidencias validadas.'])+(['Hay valoraciones FEOE pendientes de revisión o de cotejo curricular.'] if company_pending else []),
                 'closure':closure,'evidence_sha256':current_digest}
     if student_id:
         students=[s for s in students if s['id']==int(student_id)]
