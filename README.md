@@ -126,3 +126,20 @@ El extractor permite recuperar los RA y CE de la publicación original del RD 16
 | 0443 | Tratamiento de la documentación contable | 4 | 34 |
 | 0446 | Empresa en el aula | 7 | 49 |
 | 0448 | Operaciones auxiliares de gestión de tesorería | 4 | 35 |
+
+## Administración y Finanzas: consulta del currículo de origen
+
+El anexo I original del RD 1584/2011 ([BOE-A-2011-19533](https://www.boe.es/diario_boe/txt.php?id=BOE-A-2011-19533)) aporta 60 RA y 510 CE en diez módulos específicos. La recuperación se selecciona por ciclo; el software admite encabezados con créditos ECTS y el RA4 de 0651 numerado sin punto, comprueba código, recuento y secuencia y añade huella SHA-256 del documento recibido. No certifica vigencia autonómica, no aplica ponderaciones ni importa horas. Los módulos compartidos con Asistencia a la Dirección requieren cotejar su propio título; no se usa el anexo de Administración y Finanzas como sustituto automático. Se debe revisar el RD 500/2024 y la normativa autonómica.
+
+| Código | Módulo | RA | CE |
+|---|---|---:|---:|
+| 0647 | Gestión de la documentación jurídica y empresarial | 5 | 40 |
+| 0648 | Recursos humanos y responsabilidad social corporativa | 5 | 37 |
+| 0649 | Ofimática y proceso de la información | 9 | 76 |
+| 0650 | Proceso integral de la actividad comercial | 7 | 60 |
+| 0651 | Comunicación y atención al cliente | 7 | 69 |
+| 0652 | Gestión de recursos humanos | 4 | 33 |
+| 0653 | Gestión financiera | 6 | 46 |
+| 0654 | Contabilidad y fiscalidad | 6 | 55 |
+| 0655 | Gestión logística y comercial | 5 | 43 |
+| 0656 | Simulación empresarial | 6 | 51 |

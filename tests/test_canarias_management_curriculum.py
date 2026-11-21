@@ -45,7 +45,7 @@ def response(text):
 
 class CanaryManagementCurriculumTests(unittest.TestCase):
     def test_registry_excludes_old_transversal_modules(self):
-        self.assertEqual(len(co.EXPECTED_COVERAGE),9)
+        self.assertEqual(sum(source=='BOE-A-2009-19148' for source,code in co.EXPECTED_COVERAGE),9)
         self.assertEqual(sum(len(t[2]) for t in MODULES),54)
         self.assertEqual(sum(sum(t[2]) for t in MODULES),440)
         for name in ('Inglés','Inglés profesional (GM)','FOL','Itinerario personal para la empleabilidad I','Proyecto intermodular'):

@@ -6,6 +6,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 import re
+import hashlib
 import urllib.request
 import unicodedata
 
@@ -23,7 +24,30 @@ SUPPORTED = {
     'empresa en el aula': ('BOE-A-2009-19148', '0446'),
     'operaciones auxiliares de gestion de tesoreria': ('BOE-A-2009-19148', '0448'),
 }
+# Administración y Finanzas: recuentos por RA del anexo I original de 2011.
+AF_SUPPORTED = {
+    'gestion de la documentacion juridica y empresarial': ('BOE-A-2011-19533', '0647'),
+    'recursos humanos y responsabilidad social corporativa': ('BOE-A-2011-19533', '0648'),
+    'ofimatica y proceso de la informacion': ('BOE-A-2011-19533', '0649'),
+    'proceso integral de la actividad comercial': ('BOE-A-2011-19533', '0650'),
+    'comunicacion y atencion al cliente': ('BOE-A-2011-19533', '0651'),
+    'gestion de recursos humanos': ('BOE-A-2011-19533', '0652'),
+    'gestion financiera': ('BOE-A-2011-19533', '0653'),
+    'contabilidad y fiscalidad': ('BOE-A-2011-19533', '0654'),
+    'gestion logistica y comercial': ('BOE-A-2011-19533', '0655'),
+    'simulacion empresarial': ('BOE-A-2011-19533', '0656'),
+}
 EXPECTED_COVERAGE = {
+    ('BOE-A-2011-19533', '0647'): (6, 7, 8, 8, 11),
+    ('BOE-A-2011-19533', '0648'): (6, 5, 8, 8, 10),
+    ('BOE-A-2011-19533', '0649'): (8, 10, 11, 10, 8, 8, 5, 10, 6),
+    ('BOE-A-2011-19533', '0650'): (7, 9, 9, 9, 6, 10, 10),
+    ('BOE-A-2011-19533', '0651'): (10, 10, 11, 11, 7, 10, 10),
+    ('BOE-A-2011-19533', '0652'): (9, 6, 8, 10),
+    ('BOE-A-2011-19533', '0653'): (7, 7, 9, 8, 7, 8),
+    ('BOE-A-2011-19533', '0654'): (8, 10, 10, 11, 7, 9),
+    ('BOE-A-2011-19533', '0655'): (10, 8, 8, 9, 8),
+    ('BOE-A-2011-19533', '0656'): (7, 8, 9, 8, 9, 10),
     ('BOE-A-2009-19148', '0437'): (9, 10, 11, 10, 9, 10, 7, 10),
     ('BOE-A-2009-19148', '0438'): (9, 10, 7, 9, 8),
     ('BOE-A-2009-19148', '0439'): (7, 6, 7, 8, 6, 10, 6),
@@ -36,6 +60,25 @@ EXPECTED_COVERAGE = {
 }
 TITLE_AMENDMENT = 'https://www.boe.es/eli/es/rd/2024/05/21/499'
 TITLE_CONSOLIDATED_REFERENCE = 'https://www.boe.es/eli/es/rd/2009/10/30/1631/con'
+GA_CYCLE = 'CFGM Gestión Administrativa'
+AF_CYCLE = 'CFGS Administración y Finanzas'
+AD_CYCLE = 'CFGS Asistencia a la Dirección'
+ORIGINAL_TITLE_BY_CYCLE = {
+    GA_CYCLE: 'BOE-A-2009-19148',
+    AF_CYCLE: 'BOE-A-2011-19533',
+    AD_CYCLE: 'BOE-A-2011-19531',
+}
+TITLE_LINKS = {
+    'BOE-A-2009-19148': {
+        'state_title': TITLE_CONSOLIDATED_REFERENCE,
+        'state_amendment': TITLE_AMENDMENT,
+        'state_amendment_2010':'https://www.boe.es/eli/es/rd/2010/09/10/1126',
+    },
+    'BOE-A-2011-19533': {
+        'state_title':'https://www.boe.es/eli/es/rd/2011/11/04/1584/con',
+        'state_amendment':'https://www.boe.es/eli/es/rd/2024/05/21/500',
+    },
+}
 BOE_PATTERN = re.compile(r'BOE-A-[12]\d{3}-\d{1,7}\Z', re.IGNORECASE)
 
 
@@ -77,9 +120,33 @@ def _module_key(value):
     return aliases.get(name,name)
 
 
-def source_hint(module_name):
-    """Identificación de la fuente original para el selector; no consulta la red."""
-    record = SUPPORTED.get(_module_key(module_name))
+def _cycle_key(cycle):
+    if not cycle:
+        return None
+    import canarias_ag
+    try:
+        return canarias_ag.canonical_cycle(cycle)
+    except ValueError:
+        if _norm(cycle).strip() in ('gm','cfgm'):
+            return GA_CYCLE
+        return str(cycle)
+
+
+def _template_for(module_name, cycle=None):
+    key = _module_key(module_name)
+    cycle = _cycle_key(cycle)
+    if cycle == GA_CYCLE:
+        return SUPPORTED.get(key)
+    if cycle == AF_CYCLE:
+        return AF_SUPPORTED.get(key)
+    if cycle is None:  # Compatibilidad para las llamadas previas sin título.
+        return SUPPORTED.get(key) or AF_SUPPORTED.get(key)
+    return None
+
+
+def source_hint(module_name, cycle=None):
+    """Fuente original del título seleccionado, sin consulta ni confirmación."""
+    record = _template_for(module_name, cycle)
     if not record:
         return None
     boe_id, code = record
@@ -99,7 +166,8 @@ def parse_curriculum(document_text, module_name, expected_code=None):
     # El bloque debe contener un encabezado inequívoco con nombre y código del módulo.
     marker=re.compile(
         r'M[oó]dulo\s+Profesional\s*:\s*([^\r\n]{1,220}?)'
-        r'\s*\.?\s*C[oó]digo\s*:\s*(\d{4})(?!\d)', re.IGNORECASE)
+        r'\s*\.?\s*(?:Equivalencia\s+en\s+cr[eé]ditos\s+ECTS\s*:\s*\d{1,3}\s*)?'
+        r'C[oó]digo\s*:\s*(\d{4})(?!\d)', re.IGNORECASE)
     wanted = _module_key(module_name)
     found = [match for match in marker.finditer(txt)
              if _module_key(match.group(1)) == wanted]
@@ -122,7 +190,8 @@ def parse_curriculum(document_text, module_name, expected_code=None):
     lines=[x for x in lines if x and x not in {'Criterios de evaluación:', 'Criterios de evaluación'}]
     ras=[];current=None;criterion=None
     for line in lines:
-        m=re.match(r'^([1-9]\d?)\.\s+(.+)',line)
+        # El RA4 de 0651 se publica sin punto después del número.
+        m=re.match(r'^([1-9]\d?)(?:\.\s+|\s+(?=[A-ZÁÉÍÓÚÜÑ]))(.+)',line)
         if m:
             current={'code':'RA'+m.group(1),'description':m.group(2),'weight':None,'criteria':[]}
             ras.append(current);criterion=None;continue
@@ -158,10 +227,9 @@ def check_coverage(outcomes, expected):
                              '. No se admite una extracción parcial.')
 
 
-def fetch_official(module_name, boe_id=None, consent=False):
+def fetch_official(module_name, boe_id=None, consent=False, cycle=None):
     if not consent:raise ValueError('Debe confirmar la consulta a la fuente oficial.')
-    normalized=_module_key(module_name)
-    template=SUPPORTED.get(normalized)
+    template=_template_for(module_name, cycle)
     if boe_id is None or not str(boe_id).strip():
         if not template:
             raise ValueError('Para este módulo indique el identificador BOE-A-AAAA-NNN de la norma aplicable.')
@@ -169,6 +237,9 @@ def fetch_official(module_name, boe_id=None, consent=False):
     boe_id=str(boe_id).strip().upper()
     if not BOE_PATTERN.fullmatch(boe_id):
         raise ValueError('Introduzca un identificador oficial BOE-A-AAAA-NNN válido.')
+    title_source = ORIGINAL_TITLE_BY_CYCLE.get(_cycle_key(cycle))
+    if title_source and boe_id in ORIGINAL_TITLE_BY_CYCLE.values() and boe_id != title_source:
+        raise ValueError('La disposición original corresponde a otro ciclo formativo.')
     url='https://www.boe.es/diario_boe/txt.php?id='+boe_id
     req=urllib.request.Request(url,headers={'User-Agent':'EvaluaFP-ConsultaCurricular/1.0',
                                               'Accept':'text/html, text/plain'})
@@ -191,12 +262,10 @@ def fetch_official(module_name, boe_id=None, consent=False):
             'complete_for_original_source':True,
             'territorial_curriculum_confirmed':False,
         }
-        parsed['verification_links']={
-            'state_title':TITLE_CONSOLIDATED_REFERENCE,
-            'state_amendment':TITLE_AMENDMENT,
-            'state_amendment_2010':'https://www.boe.es/eli/es/rd/2010/09/10/1126',
-        }
+        parsed['verification_links']=dict(TITLE_LINKS.get(boe_id, {}))
     parsed.update({'source':'BOE','source_url':url,'source_id':boe_id,
+        'source_sha256':hashlib.sha256(raw).hexdigest(),
+        'cycle':_cycle_key(cycle),
         'consulted_at':datetime.now(timezone.utc).isoformat(timespec='seconds'),
         'warnings':['Propuesta de la publicación original del BOE, no certificación de vigencia. Contraste sus modificaciones y las normas autonómicas aplicables antes de confirmarla.',
                     'Conserve literalmente los RA/CE; contextualice los supuestos tributarios con IGIC cuando corresponda, sin sustituir el texto normativo.',

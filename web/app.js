@@ -1037,7 +1037,7 @@ async function viewPrepare(){
  ${boeDiscoveryPanel()}
  ${todofpExplorerPanel('builder')}
  ${info.curriculum_source_hint?`<p class="hint"><strong>Fuente estatal localizada:</strong> ${E(info.curriculum_source_hint.boe_id)} · módulo ${E(info.curriculum_source_hint.module_code)} · ${Number(info.curriculum_source_hint.expected_ra)} RA y ${Number(info.curriculum_source_hint.expected_ce)} CE de la publicación original. Comprueba la normativa aplicable al curso antes de confirmar.</p>`:''}
- <div class="field"><label>Identificador del BOE (si lo conoces)</label><input id="guide-boe" placeholder="BOE-A-AAAA-NNN" value="${E(S.boeSelectedId||info.curriculum_source_hint?.boe_id||'')}"></div>
+ <div class="field"><label>Identificador del BOE (si lo conoces)</label><input id="guide-boe" placeholder="BOE-A-AAAA-NNN" value="${E(info.curriculum_source_hint?.boe_id||S.boeSelectedId||'')}"></div>
  <div class="actions"><button class="btn" type="button" data-action="guided-boe">Consultar RA y CE en el BOE</button>
  <button class="btn secondary" data-action="prepare-select-path" data-path="import">Importar una programación existente</button>
  <button class="btn mutedbtn" data-page="programaciones">Introducir RA/CE manualmente</button></div>
@@ -2518,7 +2518,7 @@ document.addEventListener('click',async event=>{
  if(action==='manual-official'){
    const form=$('#manual-exam');if(!form)return;
    const moduleId=Number(form.elements.module_id.value);
-   const boeId=prompt('Identificador del BOE que contiene el currículo (en blanco si el módulo específico de Gestión Administrativa está indexado):','');
+   const boeId=prompt('Identificador del BOE que contiene el currículo (en blanco si el módulo específico del ciclo está indexado):','');
    if(boeId===null)return;
    if(!confirm('Se consultará el BOE para obtener RA y CE oficiales. No se enviarán exámenes ni datos del alumnado. ¿Continuar?'))return;
    const result=await busy(()=>API('/api/curriculum/official','POST',{

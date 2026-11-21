@@ -1105,9 +1105,10 @@ class Handler(BaseHTTPRequestHandler):
         if path=='/api/curriculum/official':
             mid=int(body['module_id'])
             with data.connect() as d:
-                module=must_row(d,'SELECT name FROM modules WHERE id=?',(mid,))
+                module=must_row(d,'SELECT name,cycle FROM modules WHERE id=?',(mid,))
                 proposal=curriculum_official.fetch_official(module['name'],body.get('boe_id'),
-                      consent=body.get('authorize_official_query') is True)
+                      consent=body.get('authorize_official_query') is True,
+                      cycle=module['cycle'])
                 data.log(d,'official_curriculum_consulted','module',mid,
                          {'source_url':proposal['source_url'],'source_id':proposal['source_id'],
                           'consulted_at':proposal['consulted_at'],
