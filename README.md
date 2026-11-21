@@ -277,3 +277,11 @@ La recuperación verifica rutas, duplicados, tamaños y hashes; comprueba SQLite
 Los cierres de evaluación incluyen las valoraciones FEOE de planes confirmados, la versión de currículo y la revisión docente en su huella. Si cambia la evidencia, el cierre queda desactualizado. Una valoración pendiente de revisión o de cotejo curricular bloquea una nueva nota final; no se traduce una valoración cualitativa en números. Los cierres previos permanecen en el historial.
 
 Se añaden pruebas sintéticas de restauración, detección de rutas maliciosas, alteración de archivos y revisión de cierres. La validación definitiva depende de los resultados de CI y las comprobaciones funcionales.
+
+### Experiencia guiada y recuperación gráfica (auditoría)
+
+Inicio muestra un selector de módulo y cinco tareas ordenadas: preparar, crear pruebas, recoger, corregir y consultar el cuaderno. Las herramientas de gestión académica, FEOE y edición avanzada aparecen en el modo avanzado (también accesible al entrar directamente desde otra pantalla). Cambiar el modo no modifica datos y no reconstruye un formulario en uso; se aplica al abrir una vista. El cuaderno profesional pliega las opciones de configuración ya validadas, las unidades e instrumentos definidos y las exportaciones. Las materias de ámbitos comunes se dirigen al cuaderno competencial.
+
+En Ajustes > Recuperar una copia de seguridad, seleccione una copia local y confirme. La aplicación verifica el manifiesto e intenta recuperar los archivos a una nueva carpeta hermana de la carpeta activa. Muestra su ruta y no modifica la configuración de arranque ni sobrescribe la base de datos actual. Las copias antiguas sin manifiesto no son compatibles con este procedimiento. La activación de los datos recuperados sigue siendo una operación separada, tras cerrar la aplicación y contrastar su contenido. El ZIP no cifra datos académicos. No use copias de origen desconocido.
+
+La ejecución 112 de GitHub Actions verificó 390 pruebas y sintaxis JavaScript antes de esta intervención de UX. Las nuevas modificaciones requieren comprobación de CI y pruebas interactivas reales; no se declaran verificadas por la mera revisión de código.
