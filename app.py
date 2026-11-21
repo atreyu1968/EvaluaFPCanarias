@@ -50,7 +50,10 @@ def read_json(handler, max_bytes=3_000_000):
         raise ValueError('Tamaño de solicitud JSON no permitido.')
     if 'application/json' not in handler.headers.get('Content-Type',''):
         raise ValueError('Se requiere Content-Type: application/json')
-    return json.loads(handler.rfile.read(size))
+    payload=json.loads(handler.rfile.read(size))
+    if not isinstance(payload,dict):
+        raise ValueError('Se requiere un objeto JSON.')
+    return payload
 
 
 def multipart(handler):
@@ -431,7 +434,15 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Type',mime)
         self.send_header('Cache-Control','private, no-store')
         self.send_header('X-Content-Type-Options','nosniff')
-        self.send_header('Content-Disposition',f'attachment; filename="{data.slug(filename)}"')
+        # Mantener la extensión cuando el nombre original es largo; el
+        # nombre alternativo ASCII evita fallos de codificación de cabeceras.
+        base,ext=os.path.splitext(str(filename))
+        safe_ext=ext if re.fullmatch(r'\.[A-Za-z0-9]{1,10}',ext) else ''
+        clean=data.slug(base)
+        ascii_base=re.sub(r'[^A-Za-z0-9._-]','_',clean).strip('._') or 'documento'
+        safe_name=ascii_base[:65-len(safe_ext)]+safe_ext
+        utf8_name=urllib.parse.quote(clean[:65-len(safe_ext)]+safe_ext,safe='')
+        self.send_header('Content-Disposition',f"attachment; filename=\"{safe_name}\"; filename*=UTF-8''{utf8_name}")
         self.send_header('Content-Length',str(len(blob)))
         self.end_headers();self.wfile.write(blob)
 
