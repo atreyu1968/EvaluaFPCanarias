@@ -1,28 +1,49 @@
-"""La landing de Canarias debe distinguir código y artefactos beta reales."""
+"""Verifica que la landing distingue distribución permanente y candidatos de CI."""
 from pathlib import Path
-import unittest
+from html.parser import HTMLParser
+from urllib.parse import urlsplit
 import re
+import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
+REPO='/atreyu1968/EvaluaFPCanarias'
+
+
+class Links(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.hrefs=[]
+    def handle_starttag(self,tag,attrs):
+        if tag=='a':
+            self.hrefs.extend(v for k,v in attrs if k=='href' and v)
+
 
 class CanaryLandingTests(unittest.TestCase):
     def test_downloads_come_from_current_repository(self):
-        html=(ROOT/"docs"/"index.html").read_text(encoding="utf-8")
+        html=(ROOT/'docs'/'index.html').read_text(encoding='utf-8')
         self.assertIn('id="descargas"',html)
-        self.assertIn('atreyu1968/evaluafpcanarias',html.lower())
-        # Las identificaciones de ejecución cambian con cada compilación.
-        # Comprobar formato, repositorio propio y dos ejecuciones de compilación
-        # evita que la actualización de enlaces válidos rompa la suite.
-        runs=set(re.findall(
-            r'https://github\.com/atreyu1968/EvaluaFPCanarias/actions/runs/(\d+)',
-            html, flags=re.IGNORECASE
-        ))
-        self.assertGreaterEqual(len(runs),2)
-        self.assertTrue(all(int(run)>0 for run in runs))
-        self.assertIn('macOS · Intel y Apple Silicon',html)
-        self.assertIn('Artifacts',html)
+        section=html.split('id="descargas"',1)[1].split('</section>',1)[0]
+        links=Links()
+        links.feed(section)
+        downloads=[]
+        for href in links.hrefs:
+            url=urlsplit(href)
+            if '/actions/runs/' not in url.path and '/releases' not in url.path:
+                continue
+            self.assertEqual(url.scheme,'https')
+            self.assertEqual(url.hostname,'github.com')
+            self.assertTrue(url.path.startswith(REPO+'/'))
+            if re.fullmatch(REPO+r'/actions/runs/\d+/artifacts/\d+',url.path):
+                downloads.append(url.path)
+        # Un único flujo puede producir las cuatro arquitecturas.
+        self.assertEqual(len(set(downloads)),4)
+        self.assertIn('https://github.com'+REPO+'/releases',links.hrefs)
+        for label in ('Windows 10/11','Linux · x64','macOS · Intel','macOS · Apple Silicon'):
+            self.assertIn(label,section)
+        self.assertIn('sin firma',section)
+        self.assertIn('beta.4',section)
         self.assertNotIn('Versión 1.0.6',html)
-        self.assertIn('sin firma',html)
 
-if __name__=="__main__":
+
+if __name__=='__main__':
     unittest.main()
