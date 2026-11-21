@@ -335,29 +335,9 @@ def print_report(d,sid):
 
 
 def create_backup():
-    from datetime import datetime
-    name='copia_evaluafp_'+datetime.now().strftime('%Y%m%d_%H%M%S')+'.zip'
-    location=data.BACKUPS/name
-    tmp=data.DB_DIR/'backup_temp.sqlite3'
-    with data.connect() as origin:
-        dest=sqlite3.connect(tmp)
-        try:
-            origin.backup(dest)
-        finally:
-            dest.close()
-    try:
-        with zipfile.ZipFile(location,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
-            z.write(tmp,'datos/evaluafp.sqlite3')
-            for root,_,files in os.walk(data.STORAGE):
-                for fname in files:
-                    f=Path(root)/fname
-                    z.write(f,'almacen/'+str(f.relative_to(data.STORAGE)).replace('\\','/'))
-            encrypted_key=ia.secret_file()
-            if storage_config.PORTABLE and encrypted_key.exists():
-                z.write(encrypted_key,'seguridad/api_cifrada.json')
-        return location
-    finally:
-        tmp.unlink(missing_ok=True)
+    import canarias_backup
+    return canarias_backup.make(data.DATA,data.BACKUPS,data.DB_FILE,data.STORAGE,
+                                ia.secret_file() if storage_config.PORTABLE else None)
 
 class MissingStudentsError(ValueError):
     """Falta alumnado para el ZIP. No se importa ninguna entrega."""
@@ -416,24 +396,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Length',str(len(raw)))
         self.end_headers();self.wfile.write(raw)
 
-    def send_file(self,path,mime='application/octet-stream',filename=None):
-        path=Path(path)
-        if not path.is_file():raise ValueError('Archivo no encontrado en el almacenamiento.')
-        self.send_response(200)
-        self.send_header('Content-Type',mime)
-        self.send_header('Cache-Control','private, no-store')
-        self.send_header('X-Content-Type-Options','nosniff')
-        self.send_header('Content-Length',str(path.stat().st_size))
-        if filename:self.send_header('Content-Disposition',f'attachment; filename="{data.slug(filename)}"')
-        self.end_headers()
-        with path.open('rb') as f:
-            while chunk:=f.read(65536):self.wfile.write(chunk)
-
-    def send_bytes(self,blob,mime,filename):
-        self.send_response(200)
-        self.send_header('Content-Type',mime)
-        self.send_header('Cache-Control','private, no-store')
-        self.send_header('X-Content-Type-Options','nosniff')
+    def download_disposition(self,filename):
         # Mantener la extensión cuando el nombre original es largo; el
         # nombre alternativo ASCII evita fallos de codificación de cabeceras.
         base,ext=os.path.splitext(str(filename))
@@ -443,6 +406,26 @@ class Handler(BaseHTTPRequestHandler):
         safe_name=ascii_base[:65-len(safe_ext)]+safe_ext
         utf8_name=urllib.parse.quote(clean[:65-len(safe_ext)]+safe_ext,safe='')
         self.send_header('Content-Disposition',f"attachment; filename=\"{safe_name}\"; filename*=UTF-8''{utf8_name}")
+
+    def send_file(self,path,mime='application/octet-stream',filename=None):
+        path=Path(path)
+        if not path.is_file():raise ValueError('Archivo no encontrado en el almacenamiento.')
+        self.send_response(200)
+        self.send_header('Content-Type',mime)
+        self.send_header('Cache-Control','private, no-store')
+        self.send_header('X-Content-Type-Options','nosniff')
+        self.send_header('Content-Length',str(path.stat().st_size))
+        if filename:Handler.download_disposition(self,filename)
+        self.end_headers()
+        with path.open('rb') as f:
+            while chunk:=f.read(65536):self.wfile.write(chunk)
+
+    def send_bytes(self,blob,mime,filename):
+        self.send_response(200)
+        self.send_header('Content-Type',mime)
+        self.send_header('Cache-Control','private, no-store')
+        self.send_header('X-Content-Type-Options','nosniff')
+        Handler.download_disposition(self,filename)
         self.send_header('Content-Length',str(len(blob)))
         self.end_headers();self.wfile.write(blob)
 
@@ -466,9 +449,11 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type','text/html; charset=utf-8')
             self.send_header('Set-Cookie',f'efp_session={TOKEN}; HttpOnly; SameSite=Strict; Path=/')
-            self.send_header('Content-Security-Policy',"default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'")
+            self.send_header('Content-Security-Policy',"default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
             self.send_header('X-Content-Type-Options','nosniff')
             self.send_header('Cache-Control','no-store')
+            self.send_header('Referrer-Policy','no-referrer')
+            self.send_header('X-Frame-Options','DENY')
             self.send_header('Content-Length',str(len(raw)))
             self.end_headers();self.wfile.write(raw)
             return
