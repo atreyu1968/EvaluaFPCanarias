@@ -1107,6 +1107,18 @@ class Handler(BaseHTTPRequestHandler):
                 d.execute('UPDATE materials SET active=? WHERE id=?',(int(active),pid))
                 data.log(d,'material_status_changed','material',pid,{'active':active})
             return self.send({'ok':True,'active':active})
+        if path=='/api/common-scopes/official':
+            import common_scopes
+            import common_scope_official
+            mid=int(body['module_id'])
+            with data.connect() as d:
+                meta=common_scopes.module_profile(d,mid)
+                if not meta:
+                    raise ValueError('Seleccione una materia de los ámbitos comunes de Canarias.')
+                result=common_scope_official.fetch(meta,body.get('authorize_official_query') is True)
+                data.log(d,'common_scope_official_consulted','module',mid,
+                    {k:result[k] for k in ('source_url','source_id','source_sha256','consulted_at','ambito')})
+            return self.send(result)
         if path=='/api/common-scopes/save':
             import common_scopes
             mid=int(body['module_id'])
