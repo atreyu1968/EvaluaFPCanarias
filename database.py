@@ -221,6 +221,10 @@ def init():
         d.execute("""INSERT OR IGNORE INTO exam_question_criteria
           (question_id,criterion_id,weight_pct,confidence,rationale)
           SELECT id,criterion_id,100,1,'Asignación original previa a v1.0.5' FROM exam_questions""")
+        # La biblioteca general 1.2.10 necesita su tabla antes de atender HTTP.
+        # Migración idempotente, válida para instalaciones nuevas y existentes.
+        import general_calendar_library
+        general_calendar_library.migrate(d)
         _rebase_on_portable_start(d)
 
 
