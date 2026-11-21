@@ -143,3 +143,19 @@ El anexo I original del RD 1584/2011 ([BOE-A-2011-19533](https://www.boe.es/diar
 | 0654 | Contabilidad y fiscalidad | 6 | 55 |
 | 0655 | Gestión logística y comercial | 5 | 43 |
 | 0656 | Simulación empresarial | 6 | 51 |
+
+## Asistencia a la Dirección: recuperación curricular independiente
+
+Se han añadido nueve módulos del anexo I original del [RD 1582/2011](https://www.boe.es/diario_boe/txt.php?id=BOE-A-2011-19531), incluidos los cinco comunes con Administración y Finanzas y Segunda lengua extranjera. Se comprueban 54 RA y 461 CE, diferenciando las referencias por disposición y código. Ante una denominación común sin ciclo ni disposición explícita, el asistente rechaza una elección arbitraria. El texto de origen no acredita por sí solo el currículo vigente; deben contrastarse el RD 500/2024 y las normas canarias aplicables.
+
+| Código | Módulo | RA | CE |
+|---|---|---:|---:|
+| 0647 | Gestión de la documentación jurídica y empresarial | 5 | 40 |
+| 0648 | Recursos humanos y responsabilidad social corporativa | 5 | 37 |
+| 0649 | Ofimática y proceso de la información | 9 | 76 |
+| 0650 | Proceso integral de la actividad comercial | 7 | 60 |
+| 0651 | Comunicación y atención al cliente | 7 | 69 |
+| 0180 | Segunda lengua extranjera | 5 | 36 |
+| 0661 | Protocolo empresarial | 6 | 57 |
+| 0662 | Organización de eventos empresariales | 5 | 46 |
+| 0663 | Gestión avanzada de la información | 5 | 40 |

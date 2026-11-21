@@ -37,7 +37,28 @@ AF_SUPPORTED = {
     'gestion logistica y comercial': ('BOE-A-2011-19533', '0655'),
     'simulacion empresarial': ('BOE-A-2011-19533', '0656'),
 }
+# Asistencia a la Dirección: fuente propia, incluso para módulos comunes.
+AD_SUPPORTED = {
+    'gestion de la documentacion juridica y empresarial': ('BOE-A-2011-19531', '0647'),
+    'recursos humanos y responsabilidad social corporativa': ('BOE-A-2011-19531', '0648'),
+    'ofimatica y proceso de la informacion': ('BOE-A-2011-19531', '0649'),
+    'proceso integral de la actividad comercial': ('BOE-A-2011-19531', '0650'),
+    'comunicacion y atencion al cliente': ('BOE-A-2011-19531', '0651'),
+    'segunda lengua extranjera': ('BOE-A-2011-19531', '0180'),
+    'protocolo empresarial': ('BOE-A-2011-19531', '0661'),
+    'organizacion de eventos empresariales': ('BOE-A-2011-19531', '0662'),
+    'gestion avanzada de la informacion': ('BOE-A-2011-19531', '0663'),
+}
 EXPECTED_COVERAGE = {
+    ('BOE-A-2011-19531', '0647'): (6, 7, 8, 8, 11),
+    ('BOE-A-2011-19531', '0648'): (6, 5, 8, 8, 10),
+    ('BOE-A-2011-19531', '0649'): (8, 10, 11, 10, 8, 8, 5, 10, 6),
+    ('BOE-A-2011-19531', '0650'): (7, 9, 9, 9, 6, 10, 10),
+    ('BOE-A-2011-19531', '0651'): (10, 10, 11, 11, 7, 10, 10),
+    ('BOE-A-2011-19531', '0180'): (7, 7, 9, 7, 6),
+    ('BOE-A-2011-19531', '0661'): (7, 11, 11, 10, 8, 10),
+    ('BOE-A-2011-19531', '0662'): (11, 8, 9, 10, 8),
+    ('BOE-A-2011-19531', '0663'): (7, 8, 9, 7, 9),
     ('BOE-A-2011-19533', '0647'): (6, 7, 8, 8, 11),
     ('BOE-A-2011-19533', '0648'): (6, 5, 8, 8, 10),
     ('BOE-A-2011-19533', '0649'): (8, 10, 11, 10, 8, 8, 5, 10, 6),
@@ -69,6 +90,10 @@ ORIGINAL_TITLE_BY_CYCLE = {
     AD_CYCLE: 'BOE-A-2011-19531',
 }
 TITLE_LINKS = {
+    'BOE-A-2011-19531': {
+        'state_title':'https://www.boe.es/eli/es/rd/2011/11/04/1582/con',
+        'state_amendment':'https://www.boe.es/eli/es/rd/2024/05/21/500',
+    },
     'BOE-A-2009-19148': {
         'state_title': TITLE_CONSOLIDATED_REFERENCE,
         'state_amendment': TITLE_AMENDMENT,
@@ -139,8 +164,12 @@ def _template_for(module_name, cycle=None):
         return SUPPORTED.get(key)
     if cycle == AF_CYCLE:
         return AF_SUPPORTED.get(key)
-    if cycle is None:  # Compatibilidad para las llamadas previas sin título.
-        return SUPPORTED.get(key) or AF_SUPPORTED.get(key)
+    if cycle == AD_CYCLE:
+        return AD_SUPPORTED.get(key)
+    if cycle is None:  # Compatibilidad para clientes antiguos.
+        # Sin ciclo no se elige arbitrariamente entre dos títulos.
+        candidates = [reg[key] for reg in (SUPPORTED, AF_SUPPORTED, AD_SUPPORTED) if key in reg]
+        return candidates[0] if len(candidates) == 1 else None
     return None
 
 
@@ -187,7 +216,8 @@ def parse_curriculum(document_text, module_name, expected_code=None):
     block=block[heading.end():]
     block=re.split(r'(?im)^[ \t]*(?:Duraci[oó]n\s*:|Contenidos b[aá]sicos\b|Orientaciones pedag[oó]gicas\b)',block,maxsplit=1)[0]
     lines=[re.sub(r'\s+',' ',x.strip()) for x in block.splitlines()]
-    lines=[x for x in lines if x and x not in {'Criterios de evaluación:', 'Criterios de evaluación'}]
+    # La publicación utiliza indistintamente punto, dos puntos o ninguno.
+    lines=[x for x in lines if x and _norm(x).strip(' .:') != 'criterios de evaluacion']
     ras=[];current=None;criterion=None
     for line in lines:
         # El RA4 de 0651 se publica sin punto después del número.
@@ -230,6 +260,14 @@ def check_coverage(outcomes, expected):
 def fetch_official(module_name, boe_id=None, consent=False, cycle=None):
     if not consent:raise ValueError('Debe confirmar la consulta a la fuente oficial.')
     template=_template_for(module_name, cycle)
+    if not cycle and boe_id:
+        key = _module_key(module_name)
+        requested = str(boe_id).strip().upper()
+        # Una norma explícita resuelve la ambigüedad sin perder el cotejo del código.
+        candidates = [reg[key] for reg in (SUPPORTED, AF_SUPPORTED, AD_SUPPORTED)
+                      if key in reg and reg[key][0] == requested]
+        if len(candidates) == 1:
+            template = candidates[0]
     if boe_id is None or not str(boe_id).strip():
         if not template:
             raise ValueError('Para este módulo indique el identificador BOE-A-AAAA-NNN de la norma aplicable.')

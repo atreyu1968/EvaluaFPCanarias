@@ -83,7 +83,7 @@ class CanaryFinanceCurriculumTests(unittest.TestCase):
 
     def test_cycle_isolation_and_transversal_modules(self):
         name=MODULES[0][1]
-        self.assertIsNone(co.source_hint(name,co.AD_CYCLE))
+        self.assertEqual(co.source_hint(name,co.AD_CYCLE)['boe_id'],'BOE-A-2011-19531')
         self.assertIsNone(co.source_hint(name,co.GA_CYCLE))
         self.assertIsNone(co.source_hint('Técnica Contable',co.AF_CYCLE))
         for name in ('Inglés profesional (GS)', 'Sostenibilidad aplicada al sistema productivo',
