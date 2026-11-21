@@ -968,6 +968,22 @@ function guidedReadProposal(form){
    }))
  }));
 }
+function commonScopeMarkup(info){
+ const p=info.profile,d=info.draft;
+ const rows=Array.from({length:p.max_competencies},(_,i)=>{
+   const code=String(i+1),c=d.competencies.find(x=>x.code===code)||{description:'',descriptors:'',criteria:[]};
+   return `<details class="panel" ${c.description?'open':''}><summary><strong>Competencia específica ${code}</strong> ${c.description?'· Incorporada':''}</summary>
+    <div class="scope-competency" data-code="${code}"><div class="field"><label>Enunciado oficial (dejar vacío si no se incorpora)</label><textarea name="scope-description" rows="3">${E(c.description)}</textarea></div>
+    <div class="field"><label>Descriptores operativos</label><input name="scope-descriptors" value="${E(c.descriptors)}" placeholder="CCL1, CD1…"></div>
+    <div class="field"><label>Criterios: una línea por criterio, con número | enunciado | descriptores opcionales</label><textarea name="scope-criteria" rows="4" placeholder="${code}.1 | Enunciado literal | Descriptores">${E(c.criteria.map(x=>[x.code,x.description,x.descriptors].join(' | ')).join('\n'))}</textarea></div></div></details>`;
+ });
+ return `<section class="welcome-card"><p class="welcome-kicker">CFGB · ÁMBITOS COMUNES</p><h2>${E(p.ambito)}</h2><p>Borrador de aportación de la materia al ámbito. No es una calificación oficial independiente ni un currículo completo del ámbito.</p></section>
+ <section class="panel"><h2>Fuente y revisión</h2><p><a href="${E(p.source_url)}" target="_blank" rel="noopener noreferrer">${E(p.source_title)}</a> · <a href="${E(p.annex_url)}" target="_blank" rel="noopener noreferrer">Anexo de ámbitos comunes (PDF)</a>.</p>
+ <p>Transcribe las competencias y los criterios que se trabajan en tu programación. Conserva la numeración del ámbito; no se generan RA ni se asignan pesos automáticamente.</p><p>Guardado: ${E(info.updated_at||'Sin borrador guardado')}</p></section>
+ <form id="common-scope-draft">${rows.join('')}<section class="panel"><div class="field"><label>Saberes básicos de la materia (bloques y enunciados)</label><textarea name="saberes" rows="8">${E(d.saberes)}</textarea></div>
+ <label class="checkbox-card"><input type="checkbox" name="teacher_reviewed" ${d.teacher_reviewed?'checked':''}> He contrastado los elementos introducidos con la fuente oficial. Esta revisión no certifica la totalidad del ámbito.</label>
+ <button class="btn" type="submit">Guardar borrador competencial</button></section></form>`;
+}
 async function viewPrepare(){
  await listModules();
  if(!S.moduleId||!S.modules.some(x=>Number(x.id)===Number(S.moduleId)))S.moduleId=S.modules[0]?.id||null;
@@ -984,6 +1000,11 @@ async function viewPrepare(){
  <input type="hidden" name="reference_course"><input type="hidden" name="reference_code">
  <input type="hidden" name="catalog_entry_id"><p class="small" data-catalog-selection></p>
  <button class="btn" type="submit">Crear módulo y continuar</button></form></section>${catalogPanel()}`;return;}
+ const scope=await API('/api/common-scopes/draft?module_id='+Number(S.moduleId));
+ if(scope.profile){
+   $('#main').innerHTML=`<section class="guide-context"><div class="field"><label>Materia que estás preparando</label><select id="prepare-module">${opt(S.modules,S.moduleId,m=>m.name+' · '+m.academic_year)}</select></div><button type="button" class="btn secondary" data-action="prepare-new-module">+ Nuevo módulo</button></section>`+commonScopeMarkup(scope);
+   return;
+ }
  const info=await API('/api/programming-builder/'+Number(S.moduleId));S.prepareInfo=info;
  if(info.draft?.official_module_code){S.curriculumHistory=await API('/api/curriculum/history?module_id='+Number(S.moduleId));}
  else {S.curriculumHistory={versions:[],count:0};S.curriculumHistoryDiff=null;}
@@ -1539,6 +1560,24 @@ async function doSubmit(form){
    }),'Apartados confirmados y conservados en el borrador.');
    if(result){S.importPreview=null;S.wizardDraft=null;S.preparePath='import';await page('preparar');}
    return;
+ }
+ if(id==='common-scope-draft'){
+   const competencies=[];
+   for(const block of form.querySelectorAll('.scope-competency')){
+     const description=block.querySelector('[name=scope-description]').value.trim();
+     const descriptors=block.querySelector('[name=scope-descriptors]').value.trim();
+     const lines=block.querySelector('[name=scope-criteria]').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+     if(!description&&!descriptors&&!lines.length)continue;
+     const criteria=[];
+     for(const line of lines){
+       const cols=line.split('|').map(x=>x.trim());
+       if(cols.length<2||cols.length>3){toast('Cada criterio requiere número | enunciado | descriptores opcionales.',true);return;}
+       criteria.push({code:cols[0],description:cols[1],descriptors:cols[2]||''});
+     }
+     competencies.push({code:block.dataset.code,description,descriptors,criteria});
+   }
+   const result=await busy(()=>API('/api/common-scopes/save','POST',{module_id:Number(S.moduleId),draft:{competencies,saberes:form.elements.saberes.value,teacher_reviewed:form.elements.teacher_reviewed.checked}}),'Borrador competencial guardado.');
+   if(result)await page('preparar');return;
  }
  if(id==='guided-review'){
    if(!form.elements.teacher_confirmed.checked){toast('Revise los RA y CE antes de confirmar.',true);return;}
