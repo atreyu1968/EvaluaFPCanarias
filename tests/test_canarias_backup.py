@@ -68,3 +68,19 @@ class BackupTests(unittest.TestCase):
                 dst.writestr(name,b'modified' if name=='almacen/doc.pdf' else src.read(name))
         with self.assertRaises(ValueError):
             backup.verify(bad)
+
+
+    def test_graphical_recovery_only_local_and_confirmed(self):
+        good=self.make()
+        listing=backup.list_archives(good.parent)
+        self.assertEqual([r['name'] for r in listing],[good.name])
+        for name,confirmed in [(good.name,False),('../'+good.name,True),('absent.zip',True)]:
+            with self.assertRaises(ValueError):
+                backup.recover_archive(good.parent,self.data,name,confirmed)
+        result=backup.recover_archive(good.parent,self.data,good.name,True)
+        self.assertTrue(result['active_data_unchanged'])
+        dest=Path(result['path'])
+        self.assertEqual(dest.parent,self.data.parent)
+        self.assertNotEqual(dest,self.data)
+        self.assertTrue((dest/backup.DB_MEMBER).is_file())
+        self.assertTrue(self.db.is_file())
