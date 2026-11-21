@@ -106,7 +106,7 @@ async function busy(work,ok){
  catch(e){console.error(e);toast(e.message||'Error no identificado',true);return null;}
  finally{S.busy=false;document.body.style.cursor=original;}
 }
-function titles(){return {expediente:'Expediente académico',decisiones:'Decisiones académicas',inicio:'Mi espacio docente',preparar:'Preparar mi módulo',programaciones:'Edición avanzada de la programación',examenes:'Exámenes y rúbricas',
+function titles(){return {feoe:'Formación en empresa',expediente:'Expediente académico',decisiones:'Decisiones académicas',inicio:'Mi espacio docente',preparar:'Preparar mi módulo',programaciones:'Edición avanzada de la programación',examenes:'Exámenes y rúbricas',
  entregas:'Registro de entregas',correcciones:'Visor y correcciones',evaluacion:'Evaluación del módulo',ajustes:'Configuración local e IA'};}
 async function page(name){
  const revision=++navigationRevision;
@@ -116,11 +116,12 @@ async function page(name){
  $all('[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===name));
  setLoading();
  try{
- const supported=['inicio','preparar','programaciones','examenes','entregas','correcciones','evaluacion','ajustes','decisiones','expediente'];
+ const supported=['inicio','preparar','programaciones','examenes','entregas','correcciones','evaluacion','ajustes','decisiones','expediente','feoe'];
  if(!supported.includes(name))throw Error('No se reconoce la sección solicitada: '+name);
  if(name==='inicio')await viewHome();
  if(name==='decisiones')await viewAcademicDecisions();
  if(name==='expediente')await viewCycleRecord();
+ if(name==='feoe')await viewFeoe();
  if(name==='preparar')await viewPrepare();
  if(name==='programaciones')await viewPrograms();
  if(name==='examenes')await viewExams();
@@ -176,6 +177,28 @@ async function viewAcademicDecisions(){
  <section class="panel"><form id="academic-action"><div class="field"><label>Comprobación</label><select name="action">${Object.entries(actions).map(([k,v])=>`<option value="${k}" ${action===k?'selected':''}>${E(v)}</option>`).join('')}</select></div><button class="btn secondary" type="submit">Seleccionar</button></form></section>
  <section class="panel"><form id="academic-evaluate" class="formgrid"><div class="field"><label>Ciclo</label><select name="cycle" required>${agCycleOptions()}</select></div>${academicDecisionFields(action)}<button class="btn" type="submit">Comprobar requisitos</button></form><div id="academic-result"></div></section>`;
 }
+function feoeDetail(info){
+ if(!info.stay)return '';
+ const st=info.stay,targets=info.targets,selected=new Set(targets.map(t=>t.outcome_id));
+ const fields=(name,label)=>`<div class="field"><label>${label}</label><input name="${name}" required maxlength="500"></div>`;
+ const check=`<label class="checkbox-card"><input type="checkbox" name="teacher_confirmed" required> Confirmo haber contrastado la documentación.</label>`;
+ return `<section class="panel"><h2>Plan de estancia ${Number(st.id)}</h2><p>${E(st.start_date)} a ${E(st.end_date)} · ${E(st.regime)} · ${E(st.planned_hours)} h previstas / ${E(info.actual_hours)} h registradas.</p><p>Tutor del centro: ${E(st.center_tutor)} · Tutor de empresa: ${E(st.company_tutor)}</p><p>${E(st.schedule)}</p><p>${E(info.notice)}</p><details><summary>Referencias documentales</summary><ul>${Object.entries(st.documents).map(([k,v])=>`<li>${E(k)}: ${E(v||'Pendiente')}</li>`).join('')}</ul></details>
+ ${!info.confirmation?`<form id="feoe-target" class="formgrid"><h3>Incorporar RA al plan</h3><div class="field"><label>Resultado de aprendizaje</label><select name="outcome_id" required>${opt(info.curriculum.filter(r=>!selected.has(r.id)),null,r=>r.module_name+' · '+r.code+' · '+r.description.slice(0,85))}</select></div><details><summary>Consultar criterios e identificadores</summary>${info.curriculum.filter(r=>!selected.has(r.id)).map(r=>`<p><b>${E(r.module_name)} · ${E(r.code)}</b></p><ul>${r.criteria.map(c=>`<li>ID ${Number(c.id)} · ${E(c.code)} · ${E(c.description)}</li>`).join('')}</ul>`).join('')}</details><div class="field"><label>ID de CE (separados por comas, opcional)</label><input name="criterion_ids"></div><div class="field"><label>Lugar</label><select name="location"><option value="empresa">Empresa</option><option value="compartido">Centro y empresa</option><option value="centro">Centro</option></select></div><div class="field"><label>Actividades previstas</label><textarea name="activities" required maxlength="8000"></textarea></div><button type="submit" class="btn">Añadir RA</button></form><form id="feoe-confirm" class="formgrid"><h3>Confirmación documental del plan</h3>${fields('reference','Referencia del plan firmado y contrastado')}${check}<button type="submit" class="btn secondary">Confirmar registro del plan</button></form>`:'<p>Plan confirmado documentalmente. Las modificaciones requieren revisión del centro.</p>'}</section>
+ <section class="panel"><h2>Resultados de aprendizaje del plan</h2>${targets.length?targets.map(t=>`<details><summary>${E(t.snapshot.module_name)} · ${E(t.snapshot.code)} · ${E(t.location)} · ${E(t.valuations[0]?.status||'Sin valoración')}</summary><p>${E(t.snapshot.description)}</p><p>${E(t.activities)}</p><ul>${t.snapshot.criteria.filter(c=>t.snapshot.selected_criterion_ids.includes(c.id)).map(c=>`<li>${E(c.code)} · ${E(c.description)}</li>`).join('')}</ul>
+ ${info.confirmation&&t.location!=='centro'?`<form id="feoe-valuation-${Number(t.id)}" data-target="${Number(t.id)}" class="formgrid"><div class="field"><label>Valoración del tutor de empresa</label><select name="status"><option value="superado">Superado</option><option value="no_superado">No superado</option></select></div>${fields('report_ref','Referencia del informe del tutor de empresa')}<div class="field"><label>Observaciones</label><textarea name="observations" required maxlength="4000"></textarea></div>${check}<button class="btn" type="submit">Registrar valoración</button></form>`:''}
+ ${t.valuations.map((v,i)=>`<p>${E(v.created_at)} · ${E(v.status)} · ${E(v.report_ref)} · ${E(v.observations)}</p>${v.reviews.map(r=>`<p>Revisión docente: ${E(r.notes)} · ${E(r.created_at)}</p>`).join('')}${i===0?`<form id="feoe-review-${Number(v.id)}" data-valuation="${Number(v.id)}" class="formgrid"><div class="field"><label>Integración de la evidencia en la evaluación (sin nota automática)</label><textarea name="notes" required maxlength="4000"></textarea></div>${check}<button class="btn secondary" type="submit">Registrar revisión docente</button></form>`:''}`).join('')}</details>`).join(''):empty('No hay RA en el plan.')}</section>
+ <section class="panel"><h2>Asistencia</h2>${info.confirmation?`<form id="feoe-attendance" class="formgrid"><div class="field"><label>Fecha</label><input type="date" name="day" min="${E(st.start_date)}" max="${E(st.end_date)}" required></div><div class="field"><label>Horas efectivas</label><input type="number" name="hours" min="0" max="24" step="0.01" required></div><div class="field"><label>Estado</label><select name="status"><option value="asistencia">Asistencia</option><option value="parcial">Parcial</option><option value="ausencia_justificada">Ausencia justificada</option><option value="ausencia_no_justificada">Ausencia no justificada</option></select></div><div class="field"><label>Observaciones</label><textarea name="notes" maxlength="4000"></textarea></div><button type="submit" class="btn">Registrar día</button></form>`:''}<p>Horas efectivas: ${E(info.actual_hours)}. Las revisiones del mismo día no duplican horas.</p><ul>${info.attendance.map(a=>`<li>${E(a.day)} · ${E(a.status)} · ${E(a.hours)} h</li>`).join('')}</ul><details><summary>Historial de asistencia</summary><ul>${info.attendance_history.map(a=>`<li>${E(a.day)} · ${E(a.hours)} h · ${E(a.status)} · ${E(a.notes)} · ${E(a.created_at)}</li>`).join('')}</ul></details></section>`;
+}
+async function viewFeoe(){
+ await listModules();
+ const info=await API('/api/feoe'+(S.feoeStay?'?stay_id='+Number(S.feoeStay):'')),roster=S.feoeRoster;
+ const input=(name,label,optional=false)=>`<div class="field"><label>${label}</label><input name="${name}" ${optional?'':'required'} maxlength="500"></div>`;
+ $('#main').innerHTML=`<section class="welcome-card"><p class="welcome-kicker">CANARIAS · FORMACIÓN EN EMPRESA</p><h2>Seguimiento FEOE</h2><p>Registro local complementario a GDCAN. No sustituye convenios, anexos, autorizaciones ni la evaluación docente.</p><p>${info.sources.map(u=>`<a href="${E(u)}" target="_blank" rel="noopener noreferrer">Normativa ${E(u.split('/').slice(-2).join('/'))}</a>`).join(' · ')}</p></section>
+ <section class="panel"><h2>Empresas colaboradoras</h2><form id="feoe-company" class="formgrid">${input('name','Empresa / organismo equiparado')}${input('workplace','Centro de trabajo')}${input('contact','Contacto profesional (opcional)',true)}<button type="submit" class="btn secondary">Registrar empresa</button></form><ul>${info.companies.map(c=>`<li>${E(c.name)} · ${E(c.workplace)}</li>`).join('')}</ul></section>
+ <section class="panel"><h2>Nueva estancia</h2><form id="feoe-roster"><div class="field"><label>Módulo de referencia del grupo</label><select name="module_id" required>${opt(S.modules,roster?.module.id,m=>m.name+' · '+m.academic_year+' · '+(m.group_name||'Sin grupo'))}</select></div><button type="submit" class="btn secondary">Consultar alumnado</button></form>
+ ${roster&&info.companies.length&&roster.students.length?`<form id="feoe-stay" class="formgrid"><div class="field"><label>Alumno</label><select name="student_id">${opt(roster.students,null,x=>x.name+' · '+x.code)}</select></div><div class="field"><label>Empresa</label><select name="company_id">${opt(info.companies,null,x=>x.name+' · '+x.workplace)}</select></div>${input('center_tutor','Tutor del centro')}${input('company_tutor','Tutor de empresa')}<div class="field"><label>Régimen</label><select name="regime"><option value="general">General</option><option value="intensivo">Intensivo</option></select></div><div class="field"><label>Inicio</label><input type="date" name="start_date" required></div><div class="field"><label>Fin</label><input type="date" name="end_date" required></div><div class="field"><label>Horas previstas</label><input type="number" name="planned_hours" min="0.01" max="2000" step="0.01" required></div><div class="field"><label>Horario y calendario previsto</label><textarea name="schedule" required maxlength="4000"></textarea></div>${[['convenio','Convenio'],['plan','Plan formativo'],['prl','Acreditación de competencias PRL'],['anexo_v','Anexo V o constancia de aplicabilidad'],['edad','Comprobación de edad'],['incorporacion','Autorización o constancia documental de incorporación']].map(([k,l])=>input(k,l)).join('')}<button type="submit" class="btn">Registrar estancia</button></form>`:''}</section>
+ <section class="panel"><h2>Estancias registradas</h2><form id="feoe-select"><select name="stay_id">${opt(info.stays,S.feoeStay,x=>x.student_name+' · '+x.company_name+' · '+x.start_date)}</select><button type="submit" class="btn secondary">Abrir estancia</button></form></section>${feoeDetail(info)}`;
+}
 async function viewHome(){
  await listModules();
  const hasModule=S.modules.length>0;
@@ -187,7 +210,8 @@ async function viewHome(){
  ['entregas','▧','Corregir trabajos','Cargar PDF o fotografías y revisar propuestas de corrección.'],
  ['evaluacion','▥','Ver la evaluación','Consultar notas por RA y CE y preparar exportaciones.'],
  ['decisiones','✓','Comprobar decisiones académicas','Promoción, permanencia, acceso a empresa y titulación.'],
- ['expediente','▤','Expediente académico','Cierres, antecedentes y acuerdos del ciclo.']];
+ ['expediente','▤','Expediente académico','Cierres, antecedentes y acuerdos del ciclo.'],
+ ['feoe','▣','Formación en empresa','Empresas, planes, asistencia y valoración de RA.']];
  $('#main').innerHTML=`<div class="welcome-card"><p class="welcome-kicker">ADMINISTRACIÓN Y GESTIÓN · CANARIAS</p>
  <h2>${hasModule?'¿Qué necesitas hacer hoy?':'Prepara tu primer módulo en unos pasos'}</h2>
  <p>${hasModule?'Selecciona una tarea. EvalúaFP conserva los documentos y las calificaciones en tu equipo.':'Puedes incorporar tu programación actual, crear un borrador editable o configurar solo la evaluación. No necesitas adaptar previamente tu documento a una plantilla.'}</p>
@@ -1640,6 +1664,17 @@ async function doSubmit(form){
    }),'Apartados confirmados y conservados en el borrador.');
    if(result){S.importPreview=null;S.wizardDraft=null;S.preparePath='import';await page('preparar');}
    return;
+ }
+ if(id==='feoe-roster'){const r=await busy(()=>API('/api/cycle-record/roster?module_id='+Number(form.elements.module_id.value)));if(r){S.feoeRoster=r;await page('feoe');}return;}
+ if(id==='feoe-select'){S.feoeStay=Number(form.elements.stay_id.value)||null;await page('feoe');return;}
+ if(id.startsWith('feoe-')){
+   const b=formObject(form);let action=id.slice(5);const raw={...b,stay_id:Number(S.feoeStay)};
+   if(id==='feoe-stay'){raw.module_id=Number(S.feoeRoster.module.id);raw.student_id=Number(b.student_id);raw.company_id=Number(b.company_id);}
+   if(id==='feoe-target'){raw.outcome_id=Number(b.outcome_id);raw.criterion_ids=String(b.criterion_ids||'').split(',').map(x=>x.trim()).filter(Boolean).map(Number);}
+   if(id.startsWith('feoe-valuation-')){action='valuation';raw.target_id=Number(form.dataset.target);}
+   if(id.startsWith('feoe-review-')){action='review';raw.valuation_id=Number(form.dataset.valuation);}
+   raw.teacher_confirmed=Boolean(form.elements.teacher_confirmed?.checked);
+   const r=await busy(()=>API('/api/feoe/'+action,'POST',raw),'Registro FEOE guardado.');if(r){if(action==='stay')S.feoeStay=r.id;await page('feoe');}return;
  }
  if(id==='cycle-record-roster'){
    const mid=Number(form.elements.module_id.value);const result=await busy(()=>API('/api/cycle-record/roster?module_id='+mid));
