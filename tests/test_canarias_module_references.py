@@ -2,6 +2,8 @@
 import json
 import tempfile
 import unittest
+import sqlite3
+import canarias_reference
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -64,6 +66,13 @@ class CanariasModuleReferenceHTTPTests(unittest.TestCase):
         }
         data.update(changes)
         return data
+
+    def test_old_unmigrated_sqlite_can_still_be_read(self):
+        with sqlite3.connect(':memory:') as db:
+            self.assertIsNone(canarias_reference.read(db, 123))
+            canarias_reference.migrate(db)
+            canarias_reference.migrate(db)
+            self.assertIsNone(canarias_reference.read(db, 123))
 
     def test_create_reference_keeps_status_and_curriculum_empty(self):
         status, created = self.send('api/modules', self.payload())
