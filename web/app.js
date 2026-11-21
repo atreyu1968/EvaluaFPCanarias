@@ -106,7 +106,7 @@ async function busy(work,ok){
  catch(e){console.error(e);toast(e.message||'Error no identificado',true);return null;}
  finally{S.busy=false;document.body.style.cursor=original;}
 }
-function titles(){return {decisiones:'Decisiones académicas',inicio:'Mi espacio docente',preparar:'Preparar mi módulo',programaciones:'Edición avanzada de la programación',examenes:'Exámenes y rúbricas',
+function titles(){return {expediente:'Expediente académico',decisiones:'Decisiones académicas',inicio:'Mi espacio docente',preparar:'Preparar mi módulo',programaciones:'Edición avanzada de la programación',examenes:'Exámenes y rúbricas',
  entregas:'Registro de entregas',correcciones:'Visor y correcciones',evaluacion:'Evaluación del módulo',ajustes:'Configuración local e IA'};}
 async function page(name){
  const revision=++navigationRevision;
@@ -116,10 +116,11 @@ async function page(name){
  $all('[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===name));
  setLoading();
  try{
- const supported=['inicio','preparar','programaciones','examenes','entregas','correcciones','evaluacion','ajustes','decisiones'];
+ const supported=['inicio','preparar','programaciones','examenes','entregas','correcciones','evaluacion','ajustes','decisiones','expediente'];
  if(!supported.includes(name))throw Error('No se reconoce la sección solicitada: '+name);
  if(name==='inicio')await viewHome();
  if(name==='decisiones')await viewAcademicDecisions();
+ if(name==='expediente')await viewCycleRecord();
  if(name==='preparar')await viewPrepare();
  if(name==='programaciones')await viewPrograms();
  if(name==='examenes')await viewExams();
@@ -151,6 +152,23 @@ function academicDecisionFields(action){
  if(action==='feoe')return field('Curso',`<select name="course"><option value="1">Primero</option><option value="2">Segundo</option></select>`)+state('age_16','Edad mínima de 16 años al inicio de la estancia')+state('prl','Competencias preventivas necesarias')+state('annex_v','Valoración colegiada de PRL documentada y aplicable')+field('Certificación específica solicitada por la empresa',`<select name="specific_certificate"><option value="pendiente">Requerida o sin comprobar</option><option value="no_requerido">No requerida</option><option value="expedido">Expedida por el centro</option></select>`)+check('conditions_confirmed','He comprobado plan formativo, condiciones de incorporación y calendario.');
  return state('modules','Todos los módulos profesionales, incluidos pendientes de primero')+state('common','Todos los ámbitos comunes (solo GB)')+state('project','Proyecto intermodular')+field('FEOE',`<select name="feoe"><option value="pendiente">Pendiente</option><option value="superado">Superada</option><option value="no_superado">No superada</option><option value="exencion_resuelta">Exención concedida y contrastada, cuando proceda</option></select>`)+check('record_complete','He comprobado la totalidad del expediente y la procedencia de las exenciones.');
 }
+function cycleRecordMarkup(r){
+ const table=rows=>rows.length?`<div class="tablewrap"><table><thead><tr><th>Módulo / materia</th><th>Estado</th><th>Calificación registrada</th><th>Observaciones</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${E(x.name)}${x.group?` · ${E(x.group)}`:''}</td><td>${E(x.status.replaceAll('_',' '))}</td><td>${E(x.score??'—')}</td><td>${E(x.warning||'')}${x.closure_id?' · Registro '+Number(x.closure_id):''}</td></tr>`).join('')}</tbody></table></div>`:empty('Sin registros vinculables.');
+ return `<section class="panel"><h2>${E(r.student.name)} · ${E(r.student.code)}</h2><p>${E(r.cycle)} · ${r.course}.º · ${E(r.group)} · ${E(r.academic_year)} · ${E(r.session)}</p><p class="hint warning">${E(r.notice)} Los acuerdos de ámbito pueden repetirse en las materias que lo integran; no se cuentan como notas independientes.</p><p><a href="${E(r.index_source)}" target="_blank" rel="noopener noreferrer">Índice de referencia</a></p>${table(r.items)}
+ ${r.unclassified.length?`<h3>Registros sin clasificación inequívoca</h3><ul>${r.unclassified.map(x=>`<li>${E(x.name)} · ${Number(x.id)}</li>`).join('')}</ul>`:''}
+ ${r.course===2?`<h3>Antecedentes candidatos de primero</h3><p>Contrasta su convocatoria, identidad, equivalencias y validez en el expediente oficial.</p>${table(r.previous_candidates)}`:''}
+ <p class="small">Huella del expediente: ${E(r.sha256)}</p></section>
+ <section class="panel"><h2>Registrar actuación o acuerdo motivado</h2><p>Los datos de la comprobación se introducen tras revisar el expediente completo. La aplicación no determina automáticamente pendientes, horas ni exenciones a partir de este índice histórico.</p><form id="cycle-record-action"><select name="action"><option value="permanence" ${S.cycleRecordAction==='permanence'?'selected':''}>Permanencia</option><option value="feoe" ${S.cycleRecordAction==='feoe'?'selected':''}>Formación en empresa</option>${r.course===1?`<option value="promotion" ${S.cycleRecordAction==='promotion'?'selected':''}>Promoción</option>`:`<option value="graduation" ${S.cycleRecordAction==='graduation'?'selected':''}>Titulación</option>`}</select><button type="submit" class="btn secondary">Seleccionar</button></form>
+ <form id="cycle-record-agreement" class="formgrid">${academicDecisionFields(S.cycleRecordAction||'permanence').replace(/<div class="field"><label>Sesión final<\/label>[\s\S]*?<\/div>/,'')}<div class="field"><label>Acuerdo, actuación o revisión motivada</label><textarea name="agreement" maxlength="8000" required></textarea></div><div class="field"><label>Referencia de la sesión o documento</label><input name="meeting_ref" maxlength="500" required></div><label class="checkbox-card"><input type="checkbox" name="teacher_confirmed" required> He contrastado el expediente oficial y la actuación registrada. No constituye acta oficial.</label><button type="submit" class="btn">Comprobar y registrar</button></form><div id="cycle-decision-result"></div></section>
+ <section class="panel"><h2>Historial de actuaciones del expediente seleccionado</h2>${r.records.length?r.records.map(x=>`<details><summary>${E(x.created_at)} · ${E(x.action)} · ${E(x.result.status)} · ${x.current_snapshot?'Misma instantánea':'Instantánea anterior o convocatoria distinta'}</summary><p>${E(x.result.reason)}</p><p>${E(x.agreement)}</p><p>${E(x.meeting_ref)}</p></details>`).join(''):empty('Sin actuaciones registradas en este módulo de referencia.')}</section>`;
+}
+async function viewCycleRecord(){
+ await listModules();
+ const roster=S.cycleRecordRoster,report=S.cycleRecordReport;
+ $('#main').innerHTML=`<section class="welcome-card"><p class="welcome-kicker">CANARIAS · SEGUIMIENTO DEL CICLO</p><h2>Expediente académico interno</h2><p>Consulta módulos y ámbitos del mismo grupo sin mezclar notas provisionales y definitivas. Los antecedentes se contrastan con el expediente oficial.</p></section>
+ <section class="panel"><form id="cycle-record-roster"><div class="field"><label>Módulo de referencia (del grupo y curso)</label><select name="module_id" required>${opt(S.modules,roster?.module.id||S.moduleId,m=>m.name+' · '+m.academic_year+' · '+(m.group_name||'Sin grupo'))}</select></div><button type="submit" class="btn secondary">Consultar alumnado</button></form>
+ ${roster?`<form id="cycle-record-report" class="formgrid"><div class="field"><label>Alumno en ${E(roster.module.name)}</label><select name="student_id" required>${opt(roster.students,report?.student.id,x=>x.name+' · '+x.code)}</select></div><div class="field"><label>Convocatoria de consulta</label><select name="session"><option value="ordinaria" ${report?.session==='ordinaria'?'selected':''}>Ordinaria</option><option value="extraordinaria" ${report?.session==='extraordinaria'?'selected':''}>Extraordinaria</option></select></div><button type="submit" class="btn">Consultar expediente</button></form>`:''}</section>${report?cycleRecordMarkup(report):''}`;
+}
 async function viewAcademicDecisions(){
  const actions={promotion:'Promoción de primero a segundo',permanence:'Permanencia',feoe:'Acceso a formación en empresa',graduation:'Titulación'};
  const action=S.academicAction||'promotion';
@@ -168,7 +186,8 @@ async function viewHome(){
  ['examenes','✎','Crear una prueba','Generar un examen o utilizar tus propias preguntas.'],
  ['entregas','▧','Corregir trabajos','Cargar PDF o fotografías y revisar propuestas de corrección.'],
  ['evaluacion','▥','Ver la evaluación','Consultar notas por RA y CE y preparar exportaciones.'],
- ['decisiones','✓','Comprobar decisiones académicas','Promoción, permanencia, acceso a empresa y titulación.']];
+ ['decisiones','✓','Comprobar decisiones académicas','Promoción, permanencia, acceso a empresa y titulación.'],
+ ['expediente','▤','Expediente académico','Cierres, antecedentes y acuerdos del ciclo.']];
  $('#main').innerHTML=`<div class="welcome-card"><p class="welcome-kicker">ADMINISTRACIÓN Y GESTIÓN · CANARIAS</p>
  <h2>${hasModule?'¿Qué necesitas hacer hoy?':'Prepara tu primer módulo en unos pasos'}</h2>
  <p>${hasModule?'Selecciona una tarea. EvalúaFP conserva los documentos y las calificaciones en tu equipo.':'Puedes incorporar tu programación actual, crear un borrador editable o configurar solo la evaluación. No necesitas adaptar previamente tu documento a una plantilla.'}</p>
@@ -1621,6 +1640,25 @@ async function doSubmit(form){
    }),'Apartados confirmados y conservados en el borrador.');
    if(result){S.importPreview=null;S.wizardDraft=null;S.preparePath='import';await page('preparar');}
    return;
+ }
+ if(id==='cycle-record-roster'){
+   const mid=Number(form.elements.module_id.value);const result=await busy(()=>API('/api/cycle-record/roster?module_id='+mid));
+   if(result){S.cycleRecordRoster=result;S.cycleRecordReport=null;S.cycleRecordAction='permanence';await page('expediente');}return;
+ }
+ if(id==='cycle-record-report'){
+   const mid=Number(S.cycleRecordRoster.module.id),sid=Number(form.elements.student_id.value),session=form.elements.session.value;
+   const result=await busy(()=>API('/api/cycle-record/report?module_id='+mid+'&student_id='+sid+'&session='+encodeURIComponent(session)));
+   if(result){S.cycleRecordReport=result;S.cycleRecordAction='permanence';await page('expediente');}return;
+ }
+ if(id==='cycle-record-action'){S.cycleRecordAction=form.elements.action.value;await page('expediente');return;}
+ if(id==='cycle-record-agreement'){
+   const b=formObject(form),r=S.cycleRecordReport;if(!r)return;
+   const facts={...b,action:S.cycleRecordAction||'permanence',cycle_years:2};
+   delete facts.agreement;delete facts.meeting_ref;delete facts.teacher_confirmed;
+   for(const key of ['pending_modules','pending_common','years_used','course'])if(key in b)facts[key]=Number(b[key]);
+   for(const key of ['record_complete','conditions_confirmed'])facts[key]=Boolean(form.elements[key]?.checked);
+   const result=await busy(()=>API('/api/cycle-record/decision','POST',{module_id:r.module_id,student_id:r.student.id,decision:{session:r.session,report_sha256:r.sha256,facts,agreement:b.agreement,meeting_ref:b.meeting_ref,teacher_confirmed:form.elements.teacher_confirmed.checked}}),'Actuación registrada en el historial local.');
+   if(result){S.cycleRecordReport=await API('/api/cycle-record/report?module_id='+r.module_id+'&student_id='+r.student.id+'&session='+encodeURIComponent(r.session));await page('expediente');}return;
  }
  if(id==='academic-action'){S.academicAction=form.elements.action.value;await page('decisiones');return;}
  if(id==='academic-evaluate'){
